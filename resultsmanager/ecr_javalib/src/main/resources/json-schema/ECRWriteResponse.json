@@ -1,0 +1,19 @@
+{
+	"$schema": "http://json-schema.org/schema#",
+	"id": "https://git2.icl.gtri.org/projects/CDCSTI/repos/json-schema/ECRWriteResponse.json#",
+	"type": "object",
+
+	"type": {
+		"type": "string",
+	},
+	
+	"id": {
+		"type": "integer",
+	},
+	
+	"message": {
+		"type": "string",
+	},
+
+	"default": {}
+}

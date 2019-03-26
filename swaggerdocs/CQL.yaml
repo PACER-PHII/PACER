@@ -1,0 +1,87 @@
+swagger: "2.0"
+info:
+  description: "This is the swagger documentation for the CQL Library API. Use this API to store, maintain, and update CQL for creating patient context in a casetype."
+  version: "1.0.0"
+  title: "Clinical Query Language Library API"
+  contact:
+    email: "Michael.Riley@gtri.gatech.edu"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "PACER.hdap.gatech.edu"
+basePath: "/CQL"
+schemes:
+- "http"
+consumes:
+- "application/json"
+produces:
+- "application/json"
+tags:
+- name: "CQL"
+  description: "Main endpoint to access CQL"
+paths:
+  /CQL:
+    post:
+      summary: "Adds a new case"
+      description: ""
+      parameters:
+      - in: "query"
+        name: "name"
+        description: "Name of the CQL to create. Use this name to reference the CQL later"
+        type: string
+        required: false
+      - in: "body"
+        name: "body"
+        description: "CQL"
+        required: true
+        schema:
+          $ref: "#/definitions/CQL"
+      responses:
+        200:
+          description: "Successful Return"
+          schema:
+            $ref: "#/definitions/CQL"
+        405:
+          description: "Invalid input"
+  /CQL/{CQLName}:
+    get:
+      summary: "Query for a CQL "
+      parameters:
+      - in: "path"
+        name: "CQLName"
+        description: "name of the query"
+        type: integer
+        required: true
+      responses:
+        200:
+          description: "Successful Return"
+    put:
+      summary: "Update an existing CQL"
+      parameters:
+      - in: "path"
+        name: "CQLName"
+        description: "Name of the CQL to update."
+        type: string
+        required: true
+      - in: "body"
+        name: "body"
+        description: "Updated CQL object."
+        required: true
+        schema:
+          $ref: "#/definitions/CQL"
+      responses:
+        400:
+          description: "Invalid ID supplied"
+        404:
+          description: "Case not found"
+        405:
+          description: "Validation exception"
+definitions:
+  CQL:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      body:
+        type: "string"
+        format: "text"

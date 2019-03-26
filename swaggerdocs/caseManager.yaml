@@ -1,0 +1,93 @@
+swagger: "2.0"
+info:
+  description: "This is the swagger documentation for the ."
+  version: "1.0.0"
+  title: "Electronic Case Report List Manager"
+  contact:
+    email: "Michael.Riley@gtri.gatech.edu"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "PACER.hdap.gatech.edu"
+basePath: "/caseManager"
+schemes:
+- "http"
+consumes:
+- "application/json"
+produces:
+- "application/json"
+tags:
+- name: "case"
+  description: "Main endpoint to access cases"
+paths:
+  /case:
+    get:
+      summary: "Query for a case in the management system. Use a unique ID, or a patientID/type duple"
+      parameters:
+      - in: "query"
+        name: "caseID"
+        description: "The direct case ID. Note that when rerunning a case, a new caseID will be generated"
+        type: integer
+        required: false
+      - in: "query"
+        name: "patientID"
+        description: "Can search for all cases given a patient and given an id. Note that the type parameter should also be included when providing a patientID"
+        type: integer
+        required: false
+      - in: "query"
+        name: "type"
+        description: "The type of case we are searching for"
+        type: string
+        required: false
+      responses:
+        200:
+          description: "Successful Return"
+          schema:
+            $ref: "#/definitions/Case"
+          
+    post:
+      summary: "Adds a new case"
+      description: ""
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "case object to be added"
+        required: true
+        schema:
+          $ref: "#/definitions/Case"
+      responses:
+        200:
+          description: "Successful Return"
+          schema:
+            $ref: "#/definitions/Case"
+        405:
+          description: "Invalid input"
+    put:
+      summary: "Update an existing case"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Case Object to be updated. Must contain ID of case, or patient/type combo"
+        required: true
+        schema:
+          $ref: "#/definitions/Case"
+      responses:
+        400:
+          description: "Invalid ID supplied"
+        404:
+          description: "Case not found"
+        405:
+          description: "Validation exception"
+definitions:
+  Case:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      type:
+        type: "string"
+        format: "text"
+      body:
+        type: "string"
+        format: "text"

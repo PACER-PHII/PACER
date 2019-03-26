@@ -1,0 +1,5 @@
+/target/
+/src/main/resources/consoleOutput
+.classpath
+.settings/**
+.project

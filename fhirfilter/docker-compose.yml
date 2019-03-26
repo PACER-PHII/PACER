@@ -1,0 +1,9 @@
+version: '2'
+services:
+  fhirfilter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8888:8080"

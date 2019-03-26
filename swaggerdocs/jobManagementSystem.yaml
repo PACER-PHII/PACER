@@ -1,0 +1,102 @@
+swagger: "2.0"
+info:
+  description: "This is the swagger documentation for the List Management System as part of the PACER platform. It manages sets of patientlists, generated from a criteria, and periodically sends jobs to the PACERCore to genearte updated and new records"
+  version: "1.0.0"
+  title: "Job Management System"
+  contact:
+    email: "Michael.Riley@gtri.gatech.edu"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "PACER.hdap.gatech.edu"
+basePath: "/JobManagementSystem"
+schemes:
+- "http"
+consumes:
+- "application/json"
+produces:
+- "application/json"
+tags:
+- name: "Job Management"
+  description: "Main endpoint for List Management"
+paths:
+  /List/{listName}:
+    get:
+      summary: "Gets a list with all people and their status attached to it"
+      parameters:
+      - in: "path"
+        name: "listName"
+        description: "Name of the list"
+        required: true
+      responses:
+        200:
+          description: "Successful Return"
+          schema:
+            $ref: "#/definitions/PersonList"
+        405:
+          description: "Invalid input"
+  /List:
+    post:
+      summary: "Creates a new list of people"
+      description: ""
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "case object to be added."
+        required: false
+        schema:
+          $ref: "#/definitions/PersonList"
+      responses:
+        200:
+          description: "Successful Return. Returns an array of an appropriate record. Due to swagger limitations, we have included a \"recordResponse\" key for representation purposes."
+          schema:
+            type: array
+            items:
+               type: object
+               properties:
+                 recordResponse:
+                   type: string
+                   description: "This should be some response object related to the jobType sent. For example, for an ECR jobType, this would be an ECR object."
+
+        405:
+          description: "Invalid input"
+definitions:
+  PersonList:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      name:
+        type: "string"
+        format: "text"
+      jobType:
+        type: "string"
+        format: "text"
+        description: "The type of job and record to be generated for this job. This also sets the output type expected from the result.  For example, ECR (Electronic Case Record)."
+      listType:
+        type: "string"
+        format: "text"
+        description: "Describes how the list will be used, as a single use run, or a periodic system"
+        enum: ["Single Use","Periodic"]
+      runType:
+        type: "string"
+        format: "text"
+        description: "When updating people from the list, choose whether to update only new people, people whose job never finished, or all of them."
+        enum: ["New_Only","Unfinished_Only","All"]
+      ListElements:
+        type: array
+        items:
+          $ref: "#/definitions/Person"
+  Person:
+    type: "object"
+    properties:
+      referenceId:
+        type: "integer"
+        format: "int64"
+        description: "This is an external identifier that exists within the EHR/FHIR server. Example: 123-456-7890."
+      firstName:
+        type: "string"
+      processState:
+        type: "string"
+        enum: ["None","Inlist","Processing","New_Complete","Old_Complete","Error"]

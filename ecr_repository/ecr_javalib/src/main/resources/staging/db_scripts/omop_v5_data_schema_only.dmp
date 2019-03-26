@@ -1,0 +1,2571 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 9.5.5
+-- Dumped by pg_dump version 9.5.5
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: omop_v5; Type: SCHEMA; Schema: -; Owner: omop_v5
+--
+
+CREATE SCHEMA omop_v5;
+
+
+ALTER SCHEMA omop_v5 OWNER TO omop_v5;
+
+SET search_path = omop_v5, pg_catalog;
+
+--
+-- Name: isnumeric(text); Type: FUNCTION; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE FUNCTION isnumeric(text) RETURNS boolean
+    LANGUAGE plpgsql IMMUTABLE STRICT
+    AS $_$
+DECLARE x NUMERIC;
+BEGIN
+    x = $1::NUMERIC;
+    RETURN TRUE;
+EXCEPTION WHEN others THEN
+    RETURN FALSE;
+END;
+$_$;
+
+
+ALTER FUNCTION omop_v5.isnumeric(text) OWNER TO omop_v5;
+
+--
+-- Name: run_drug_era(integer); Type: FUNCTION; Schema: omop_v5; Owner: postgres
+--
+
+CREATE FUNCTION run_drug_era(drug_person_id integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+begin
+--------------------------------------------------------------------------------------------------------------
+---Adapted to PostgreSQL drug_era from Pure SQL drug_era written by Chris_Knoll: https://gist.github.com/chrisknoll/c820cc12d833db2e3d1e
+---Upgraded to v5
+---Uses STOCKPILE method to populate gap_days field
+---INTERVAL set to 30 days
+ 
+---Chris Knoll's comments are after two dashes
+---Taylor Delehanty's comments are after three dashes
+---proper schema for " needs to be replaced in the code
+---proper schema for " needs to be replaced in the code. This schema is where the vocabularies and concepts are located.
+-------------------------------------------------------------------------------------------------------------
+set search_path = omop_v5;
+
+delete from drug_era where person_id = drug_person_id;
+
+WITH cteDrugPreTarget(drug_exposure_id, person_id, ingredient_concept_id, drug_exposure_start_date, days_supply, drug_exposure_end_date) AS
+	(
+	-- Normalize DRUG_EXPOSURE_END_DATE to either the existing drug exposure end date, or add days supply, or add 1 day to the start date
+	SELECT
+		d.drug_exposure_id
+		, d.person_id
+		, c.concept_id AS ingredient_concept_id
+		, d.drug_exposure_start_date AS drug_exposure_start_date
+		, d.days_supply AS days_supply
+		, COALESCE(
+			---NULLIF returns NULL if both values are the same, otherwise it returns the first parameter
+			NULLIF(drug_exposure_end_date, NULL),
+			---If drug_exposure_end_date != NULL, return drug_exposure_end_date, otherwise go to next case
+			NULLIF(drug_exposure_start_date + (INTERVAL '1 day' * days_supply), drug_exposure_start_date),
+			---If days_supply != NULL or 0, return drug_exposure_start_date + days_supply, otherwise go to next case
+			drug_exposure_start_date + INTERVAL '1 day'
+			---Add 1 day to the drug_exposure_start_date since there is no end_date or INTERVAL for the days_supply
+		) AS drug_exposure_end_date
+	FROM drug_exposure d
+		JOIN concept_ancestor ca ON ca.descendant_concept_id = d.drug_concept_id
+		JOIN concept c ON ca.ancestor_concept_id = c.concept_id
+		WHERE c.vocabulary_id = 'RxNorm' 
+		AND c.concept_class_id = 'Ingredient'
+		and d.person_id = drug_person_id
+		/* Depending on the needs of your data, you can put more filters on to your code. We assign 0 to unmapped drug_concept_id's, and we found data where days_supply was negative.
+		 * We don't want different drugs put in the same era, so the code below shows how we filtered them out.
+ 		 * We also don't want negative days_supply, because that will pull our end_date before the start_date due to our second parameter in the COALESCE function.
+ 		 * For now, we are filtering those out as well, but this is a data quality issue that we are trying to solve.
+ 		 */
+		---AND d.drug_concept_id != 0
+		---AND d.days_supply >= 0
+)
+--------------------------------------------------------------------------------------------------------------
+, cteDrugTarget(drug_exposure_id, person_id, ingredient_concept_id, drug_exposure_start_date, days_supply, drug_exposure_end_date, days_of_exposure) AS
+(
+	SELECT
+		drug_exposure_id
+		, person_id
+		, ingredient_concept_id
+		, drug_exposure_start_date
+		, days_supply
+		, drug_exposure_end_date
+		, drug_exposure_end_date - drug_exposure_start_date AS days_of_exposure ---Calculates the days of exposure to the drug so at the end we can subtract the SUM of these days from the total days in the era.
+	FROM cteDrugPreTarget
+)
+--------------------------------------------------------------------------------------------------------------
+, cteEndDates (person_id, ingredient_concept_id, end_date) AS -- the magic
+(
+	SELECT
+		person_id
+		, ingredient_concept_id
+		, event_date - INTERVAL '30 days' AS end_date -- unpad the end date
+	FROM
+	(
+		SELECT
+			person_id
+			, ingredient_concept_id
+			, event_date
+			, event_type
+			, MAX(start_ordinal) OVER (PARTITION BY person_id, ingredient_concept_id ORDER BY event_date, event_type ROWS unbounded preceding) AS start_ordinal -- this pulls the current START down from the prior rows so that the NULLs from the END DATES will contain a value we can compare with
+			, ROW_NUMBER() OVER (PARTITION BY person_id, ingredient_concept_id ORDER BY event_date, event_type) AS overall_ord -- this re-numbers the inner UNION so all rows are numbered ordered by the event date
+		FROM (
+			-- select the start dates, assigning a row number to each
+			SELECT
+				person_id
+				, ingredient_concept_id
+				, drug_exposure_start_date AS event_date
+				, -1 AS event_type
+				, ROW_NUMBER() OVER (PARTITION BY person_id, ingredient_concept_id ORDER BY drug_exposure_start_date) AS start_ordinal
+			FROM cteDrugTarget
+		
+			UNION ALL
+		
+			-- pad the end dates by 30 to allow a grace period for overlapping ranges.
+			SELECT
+				person_id
+				, ingredient_concept_id
+				, drug_exposure_end_date + INTERVAL '30 days'
+				, 1 AS event_type
+				, NULL
+			FROM cteDrugTarget
+		) RAWDATA
+	) e
+	WHERE (2 * e.start_ordinal) - e.overall_ord = 0 
+
+)
+--------------------------------------------------------------------------------------------------------------
+, cteDrugExposureEnds (person_id, drug_concept_id, drug_exposure_start_date, drug_era_end_date, days_of_exposure) AS
+(
+	SELECT 
+	       dt.person_id
+	       , dt.ingredient_concept_id
+	       , dt.drug_exposure_start_date
+	       , MIN(e.end_date) AS era_end_date
+	       , dt.days_of_exposure AS days_of_exposure
+	FROM cteDrugTarget dt
+	JOIN cteEndDates e ON dt.person_id = e.person_id AND dt.ingredient_concept_id = e.ingredient_concept_id AND e.end_date >= dt.drug_exposure_start_date
+	GROUP BY 
+      	      dt.drug_exposure_id
+      	      , dt.person_id
+	      , dt.ingredient_concept_id
+	      , dt.drug_exposure_start_date
+	      , dt.days_of_exposure
+)
+--------------------------------------------------------------------------------------------------------------
+INSERT INTO drug_era(drug_era_id, person_id, drug_concept_id, drug_era_start_date, drug_era_end_date, drug_exposure_count, gap_days)
+SELECT
+	nextval('omop_v5.drug_era_id_seq') as drug_era_id
+	, person_id
+	, drug_concept_id
+	, MIN(drug_exposure_start_date) AS drug_era_start_date
+	, drug_era_end_date
+	, COUNT(*) AS drug_exposure_count
+	, EXTRACT(EPOCH FROM (drug_era_end_date - MIN(drug_exposure_start_date)) - SUM(days_of_exposure)) / 86400 AS gap_days
+              ---dividing by 86400 puts the integer in the "units" of days.
+              ---There are no actual units on this, it is just an integer, but we want it to represent days and dividing by 86400 does that.
+FROM cteDrugExposureEnds
+GROUP BY person_id, drug_concept_id, drug_era_end_date
+ORDER BY person_id, drug_concept_id
+;
+
+/*
+---This is a common test to make sure you have the same number of exposures going in as contribute to the count at the end.
+---Make sure the JOIN and AND statements are the same as above so that your counts actually represent what you should be getting.
+SELECT
+	(SELECT COUNT(*) FROM drug_exposure d JOIN concept_ancestor ca ON ca.descendant_concept_id = d.drug_concept_id
+		JOIN concept c ON ca.ancestor_concept_id = c.concept_id
+		WHERE c.vocabulary_id = 'RxNorm' 
+		AND c.concept_class_id = 'Ingredient'
+		AND d.drug_concept_id != 0 ---Our unmapped drug_concept_id's are set to 0, so we don't want different drugs wrapped up in the same era
+		AND d.days_supply >= 0) AS count
+	, (SELECT SUM(drug_exposure_count) FROM drug_era) AS sum
+*/
+
+end;
+
+$$;
+
+
+ALTER FUNCTION omop_v5.run_drug_era(drug_person_id integer) OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: attribute_definition; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE attribute_definition (
+    attribute_definition_id integer NOT NULL,
+    attribute_name character varying(255) NOT NULL,
+    attribute_description text,
+    attribute_type_concept_id integer NOT NULL,
+    attribute_syntax text
+);
+
+
+ALTER TABLE attribute_definition OWNER TO omop_v5;
+
+--
+-- Name: care_site; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE care_site (
+    care_site_id integer NOT NULL,
+    care_site_name character varying(255),
+    place_of_service_concept_id integer,
+    location_id integer,
+    care_site_source_value character varying(50),
+    place_of_service_source_value character varying(50)
+);
+
+
+ALTER TABLE care_site OWNER TO omop_v5;
+
+--
+-- Name: care_site_aud; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE care_site_aud (
+    care_site_id bigint NOT NULL,
+    rev integer NOT NULL,
+    revtype smallint,
+    care_site_name character varying(255),
+    care_site_source_value character varying(255),
+    place_of_service_source_value character varying(255),
+    location_id bigint,
+    place_of_service_concept_id bigint
+);
+
+
+ALTER TABLE care_site_aud OWNER TO omop_v5;
+
+--
+-- Name: caresite_id_seq; Type: SEQUENCE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE SEQUENCE caresite_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE caresite_id_seq OWNER TO omop_v5;
+
+--
+-- Name: cdm_source; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE cdm_source (
+    cdm_source_name character varying(255) NOT NULL,
+    cdm_source_abbreviation character varying(25),
+    cdm_holder character varying(255),
+    source_description text,
+    source_documentation_reference character varying(255),
+    cdm_etl_reference character varying(255),
+    source_release_date date,
+    cdm_release_date date,
+    cdm_version character varying(10),
+    vocabulary_version character varying(20)
+);
+
+
+ALTER TABLE cdm_source OWNER TO omop_v5;
+
+--
+-- Name: cohort; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE cohort (
+    cohort_definition_id integer NOT NULL,
+    subject_id integer NOT NULL,
+    cohort_start_date date NOT NULL,
+    cohort_end_date date NOT NULL
+);
+
+
+ALTER TABLE cohort OWNER TO omop_v5;
+
+--
+-- Name: cohort_attribute; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE cohort_attribute (
+    cohort_definition_id integer NOT NULL,
+    cohort_start_date date NOT NULL,
+    cohort_end_date date NOT NULL,
+    subject_id integer NOT NULL,
+    attribute_definition_id integer NOT NULL,
+    value_as_number numeric,
+    value_as_concept_id integer
+);
+
+
+ALTER TABLE cohort_attribute OWNER TO omop_v5;
+
+--
+-- Name: cohort_definition; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE cohort_definition (
+    cohort_definition_id integer NOT NULL,
+    cohort_definition_name character varying(255) NOT NULL,
+    cohort_definition_description text,
+    definition_type_concept_id integer NOT NULL,
+    cohort_definition_syntax text,
+    subject_concept_id integer NOT NULL,
+    cohort_initiation_date date
+);
+
+
+ALTER TABLE cohort_definition OWNER TO omop_v5;
+
+--
+-- Name: concept; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE concept (
+    concept_id integer NOT NULL,
+    concept_name character varying(255) NOT NULL,
+    domain_id character varying(20) NOT NULL,
+    vocabulary_id character varying(20) NOT NULL,
+    concept_class_id character varying(20) NOT NULL,
+    standard_concept character varying(1),
+    concept_code character varying(50) NOT NULL,
+    valid_start_date date NOT NULL,
+    valid_end_date date NOT NULL,
+    invalid_reason character varying(1)
+);
+
+
+ALTER TABLE concept OWNER TO omop_v5;
+
+--
+-- Name: concept_ancestor; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE concept_ancestor (
+    ancestor_concept_id integer NOT NULL,
+    descendant_concept_id integer NOT NULL,
+    min_levels_of_separation integer NOT NULL,
+    max_levels_of_separation integer NOT NULL
+);
+
+
+ALTER TABLE concept_ancestor OWNER TO omop_v5;
+
+--
+-- Name: concept_aud; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE concept_aud (
+    concept_id bigint NOT NULL,
+    rev integer NOT NULL,
+    revtype smallint,
+    concept_class_id character varying(255),
+    concept_code character varying(255),
+    invalid_reason character varying(255),
+    concept_name character varying(255),
+    standard_concept character(1),
+    valid_end_date timestamp without time zone,
+    valid_start_date timestamp without time zone,
+    domain_id character varying(255),
+    vocabulary_id character varying(255)
+);
+
+
+ALTER TABLE concept_aud OWNER TO omop_v5;
+
+--
+-- Name: concept_class; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE concept_class (
+    concept_class_id character varying(20) NOT NULL,
+    concept_class_name character varying(255) NOT NULL,
+    concept_class_concept_id integer NOT NULL
+);
+
+
+ALTER TABLE concept_class OWNER TO omop_v5;
+
+--
+-- Name: concept_relationship; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE concept_relationship (
+    concept_id_1 integer NOT NULL,
+    concept_id_2 integer NOT NULL,
+    relationship_id character varying(20) NOT NULL,
+    valid_start_date date NOT NULL,
+    valid_end_date date NOT NULL,
+    invalid_reason character varying(1)
+);
+
+
+ALTER TABLE concept_relationship OWNER TO omop_v5;
+
+--
+-- Name: concept_synonym; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE concept_synonym (
+    concept_id integer NOT NULL,
+    concept_synonym_name character varying(1000) NOT NULL,
+    language_concept_id integer NOT NULL
+);
+
+
+ALTER TABLE concept_synonym OWNER TO omop_v5;
+
+--
+-- Name: condition_era; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE condition_era (
+    condition_era_id integer NOT NULL,
+    person_id integer NOT NULL,
+    condition_concept_id integer NOT NULL,
+    condition_era_start_date date NOT NULL,
+    condition_era_end_date date NOT NULL,
+    condition_occurrence_count integer
+);
+
+
+ALTER TABLE condition_era OWNER TO omop_v5;
+
+--
+-- Name: condition_occurrence; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE condition_occurrence (
+    condition_occurrence_id bigint,
+    person_id integer,
+    condition_concept_id integer,
+    condition_start_date date,
+    condition_end_date date,
+    condition_type_concept_id integer,
+    stop_reason character varying(20),
+    provider_id integer,
+    visit_occurrence_id bigint,
+    condition_source_value character varying(50),
+    condition_source_concept_id integer
+);
+
+
+ALTER TABLE condition_occurrence OWNER TO omop_v5;
+
+--
+-- Name: condition_occurrence_aud; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE condition_occurrence_aud (
+    condition_occurrence_id bigint NOT NULL,
+    rev integer NOT NULL,
+    revtype smallint,
+    condition_end_date timestamp without time zone,
+    condition_source_value character varying(255),
+    condition_start_date timestamp without time zone,
+    stop_reason character varying(255),
+    condition_concept_id bigint,
+    condition_type_concept_id bigint,
+    visit_occurrence_id bigint,
+    person_id bigint,
+    provider_id bigint,
+    condition_source_concept_id bigint
+);
+
+
+ALTER TABLE condition_occurrence_aud OWNER TO omop_v5;
+
+--
+-- Name: condition_occurrence_id_seq; Type: SEQUENCE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE SEQUENCE condition_occurrence_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE condition_occurrence_id_seq OWNER TO omop_v5;
+
+--
+-- Name: cost; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE cost (
+    cost_id integer NOT NULL,
+    cost_event_id integer NOT NULL,
+    cost_domain_id character varying(20) NOT NULL,
+    cost_type_concept_id integer NOT NULL,
+    currency_concept_id integer,
+    total_charge numeric,
+    total_cost numeric,
+    total_paid numeric,
+    paid_by_payer numeric,
+    paid_by_patient numeric,
+    paid_patient_copay numeric,
+    paid_patient_coinsurance numeric,
+    paid_patient_deductible numeric,
+    paid_by_primary numeric,
+    paid_ingredient_cost numeric,
+    paid_dispensing_fee numeric,
+    payer_plan_period_id integer,
+    amount_allowed numeric,
+    revenue_code_concept_id integer,
+    reveue_code_source_value character varying(50)
+);
+
+
+ALTER TABLE cost OWNER TO omop_v5;
+
+--
+-- Name: death; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE death (
+    person_id integer NOT NULL,
+    death_date date NOT NULL,
+    death_type_concept_id integer NOT NULL,
+    cause_concept_id integer,
+    cause_source_value character varying(50),
+    cause_source_concept_id integer
+);
+
+
+ALTER TABLE death OWNER TO omop_v5;
+
+--
+-- Name: device_exposure; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE device_exposure (
+    device_exposure_id integer NOT NULL,
+    person_id integer NOT NULL,
+    device_concept_id integer NOT NULL,
+    device_exposure_start_date date NOT NULL,
+    device_exposure_end_date date,
+    device_type_concept_id integer NOT NULL,
+    unique_device_id character varying(50),
+    quantity integer,
+    provider_id integer,
+    visit_occurrence_id integer,
+    device_source_value character varying(100),
+    device_source_concept_id integer
+);
+
+
+ALTER TABLE device_exposure OWNER TO omop_v5;
+
+--
+-- Name: device_exposure_aud; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE device_exposure_aud (
+    device_exposure_id bigint NOT NULL,
+    rev integer NOT NULL,
+    revtype smallint,
+    device_exposure_end_date timestamp without time zone,
+    device_exposure_start_date timestamp without time zone,
+    unique_device_id character varying(255),
+    device_concept_id bigint,
+    device_type_concept_id bigint,
+    person_id bigint,
+    provider_id bigint,
+    visit_occurrence_id bigint
+);
+
+
+ALTER TABLE device_exposure_aud OWNER TO omop_v5;
+
+--
+-- Name: domain; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE domain (
+    domain_id character varying(20) NOT NULL,
+    domain_name character varying(255) NOT NULL,
+    domain_concept_id integer NOT NULL
+);
+
+
+ALTER TABLE domain OWNER TO omop_v5;
+
+--
+-- Name: dose_era; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE dose_era (
+    dose_era_id integer NOT NULL,
+    person_id integer NOT NULL,
+    drug_concept_id integer NOT NULL,
+    unit_concept_id integer NOT NULL,
+    dose_value numeric NOT NULL,
+    dose_era_start_date date NOT NULL,
+    dose_era_end_date date NOT NULL
+);
+
+
+ALTER TABLE dose_era OWNER TO omop_v5;
+
+--
+-- Name: drug_era; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE drug_era (
+    drug_era_id integer NOT NULL,
+    person_id integer NOT NULL,
+    drug_concept_id integer NOT NULL,
+    drug_era_start_date date NOT NULL,
+    drug_era_end_date date NOT NULL,
+    drug_exposure_count integer,
+    gap_days integer
+);
+
+
+ALTER TABLE drug_era OWNER TO omop_v5;
+
+--
+-- Name: drug_era_id_seq; Type: SEQUENCE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE SEQUENCE drug_era_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE drug_era_id_seq OWNER TO omop_v5;
+
+--
+-- Name: drug_exposure; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE drug_exposure (
+    drug_exposure_id integer NOT NULL,
+    person_id integer NOT NULL,
+    drug_concept_id integer NOT NULL,
+    drug_exposure_start_date date NOT NULL,
+    drug_exposure_end_date date,
+    drug_type_concept_id integer NOT NULL,
+    stop_reason character varying(20),
+    refills integer,
+    quantity numeric,
+    days_supply integer,
+    sig text,
+    route_concept_id integer,
+    effective_drug_dose numeric,
+    dose_unit_concept_id integer,
+    lot_number character varying(50),
+    provider_id integer,
+    visit_occurrence_id integer,
+    drug_source_value character varying(50),
+    drug_source_concept_id integer,
+    route_source_value character varying(50),
+    dose_unit_source_value character varying(50)
+);
+
+
+ALTER TABLE drug_exposure OWNER TO omop_v5;
+
+--
+-- Name: drug_exposure_aud; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE drug_exposure_aud (
+    drug_exposure_id bigint NOT NULL,
+    rev integer NOT NULL,
+    revtype smallint,
+    dose_unit_source_value character varying(255),
+    effective_drug_dose double precision,
+    dose_unit_concept_id bigint,
+    days_supply integer,
+    drug_exposure_end_date timestamp without time zone,
+    quantity numeric(19,2),
+    refills integer,
+    drug_exposure_start_date timestamp without time zone,
+    drug_type_concept_id bigint,
+    drug_concept_id bigint,
+    person_id bigint,
+    provider_id bigint,
+    visit_occurrence_id bigint,
+    drug_source_value character varying(255),
+    stop_reason character varying(255)
+);
+
+
+ALTER TABLE drug_exposure_aud OWNER TO omop_v5;
+
+--
+-- Name: drug_exposure_id_seq; Type: SEQUENCE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE SEQUENCE drug_exposure_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE drug_exposure_id_seq OWNER TO omop_v5;
+
+--
+-- Name: drug_strength; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE drug_strength (
+    drug_concept_id integer NOT NULL,
+    ingredient_concept_id integer NOT NULL,
+    amount_value numeric,
+    amount_unit_concept_id integer,
+    numerator_value numeric,
+    numerator_unit_concept_id integer,
+    denominator_value numeric,
+    denominator_unit_concept_id integer,
+    valid_start_date date NOT NULL,
+    valid_end_date date NOT NULL,
+    invalid_reason character varying(1)
+);
+
+
+ALTER TABLE drug_strength OWNER TO omop_v5;
+
+--
+-- Name: measurement; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE measurement (
+    measurement_id integer NOT NULL,
+    person_id integer NOT NULL,
+    measurement_concept_id integer NOT NULL,
+    measurement_date date NOT NULL,
+    measurement_time character varying(10),
+    measurement_type_concept_id integer NOT NULL,
+    operator_concept_id integer,
+    value_as_number numeric,
+    value_as_concept_id integer,
+    unit_concept_id integer,
+    range_low numeric,
+    range_high numeric,
+    provider_id integer,
+    visit_occurrence_id integer,
+    measurement_source_value character varying(50),
+    measurement_source_concept_id integer,
+    unit_source_value character varying(50),
+    value_source_value character varying(50)
+);
+
+
+ALTER TABLE measurement OWNER TO omop_v5;
+
+--
+-- Name: observation; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE observation (
+    observation_id integer NOT NULL,
+    person_id integer NOT NULL,
+    observation_concept_id integer NOT NULL,
+    observation_date date NOT NULL,
+    observation_time character varying(10),
+    observation_type_concept_id integer NOT NULL,
+    value_as_number numeric,
+    value_as_string character varying(60),
+    value_as_concept_id integer,
+    qualifier_concept_id integer,
+    unit_concept_id integer,
+    provider_id integer,
+    visit_occurrence_id integer,
+    observation_source_value character varying(50),
+    observation_source_concept_id integer,
+    unit_source_value character varying(50),
+    qualifier_source_value character varying(50)
+);
+
+
+ALTER TABLE observation OWNER TO omop_v5;
+
+--
+-- Name: f_observation_view; Type: VIEW; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE VIEW f_observation_view AS
+ SELECT measurement.measurement_id AS observation_id,
+    measurement.person_id,
+    measurement.measurement_concept_id AS observation_concept_id,
+    measurement.measurement_date AS observation_date,
+    measurement.measurement_time AS observation_time,
+    measurement.measurement_type_concept_id AS observation_type_concept_id,
+    measurement.operator_concept_id AS observation_operator_concept_id,
+    measurement.value_as_number,
+    NULL::character varying AS value_as_string,
+    measurement.value_as_concept_id,
+    NULL::integer AS qualifier_concept_id,
+    measurement.unit_concept_id,
+    measurement.range_low,
+    measurement.range_high,
+    measurement.provider_id,
+    measurement.visit_occurrence_id,
+    measurement.measurement_source_value AS source_value,
+    measurement.measurement_source_concept_id AS source_concept_id,
+    measurement.unit_source_value,
+    measurement.value_source_value,
+    NULL::character varying AS qualifier_source_value
+   FROM measurement
+UNION ALL
+ SELECT (- observation.observation_id) AS observation_id,
+    observation.person_id,
+    observation.observation_concept_id,
+    observation.observation_date,
+    observation.observation_time,
+    observation.observation_type_concept_id,
+    NULL::integer AS observation_operator_concept_id,
+    observation.value_as_number,
+    observation.value_as_string,
+    observation.value_as_concept_id,
+    observation.qualifier_concept_id,
+    observation.unit_concept_id,
+    NULL::double precision AS range_low,
+    NULL::double precision AS range_high,
+    observation.provider_id,
+    observation.visit_occurrence_id,
+    observation.observation_source_value AS source_value,
+    observation.observation_source_concept_id AS source_concept_id,
+    observation.unit_source_value,
+    NULL::character varying AS value_source_value,
+    observation.qualifier_source_value
+   FROM observation
+  WHERE (NOT (observation.observation_concept_id IN ( SELECT c.concept_id
+           FROM concept c
+          WHERE (((upper((c.concept_name)::text) ~~ '%ALLERG%'::text) OR (upper((c.concept_name)::text) ~~ '%REACTION%'::text)) AND (((c.domain_id)::text = 'Observation'::text) OR ((c.domain_id)::text = 'Condition'::text)) AND ((c.invalid_reason)::text <> 'D'::text)))));
+
+
+ALTER TABLE f_observation_view OWNER TO omop_v5;
+
+--
+-- Name: f_person; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE f_person (
+    person_id integer NOT NULL,
+    family_name character varying(255),
+    given1_name character varying(255),
+    given2_name character varying(255),
+    prefix_name character varying(255),
+    suffix_name character varying(255),
+    preferred_language character varying(255),
+    ssn character varying(12),
+    active smallint DEFAULT 1,
+    contact_point1 character varying(255),
+    contact_point2 character varying(255),
+    contact_point3 character varying(255),
+    maritalstatus character varying(255)
+);
+
+
+ALTER TABLE f_person OWNER TO omop_v5;
+
+--
+-- Name: TABLE f_person; Type: COMMENT; Schema: omop_v5; Owner: omop_v5
+--
+
+COMMENT ON TABLE f_person IS 'Extended one-to-one table with person table. This include person''s demographic information to support FHIR patient resource.';
+
+
+--
+-- Name: f_person_aud; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE f_person_aud (
+    person_id bigint NOT NULL,
+    rev integer NOT NULL,
+    active smallint,
+    family_name character varying(255),
+    given1_name character varying(255),
+    given2_name character varying(255),
+    preferred_language character varying(255),
+    prefix_name character varying(255),
+    ssn character varying(255),
+    suffix_name character varying(255),
+    maritalstatus_concept_id bigint,
+    contact_point1 character varying(255),
+    contact_point2 character varying(255),
+    contact_point3 character varying(255),
+    maritalstatus character varying(255)
+);
+
+
+ALTER TABLE f_person_aud OWNER TO omop_v5;
+
+--
+-- Name: fact_relationship; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE fact_relationship (
+    domain_concept_id_1 integer NOT NULL,
+    fact_id_1 integer NOT NULL,
+    domain_concept_id_2 integer NOT NULL,
+    fact_id_2 integer NOT NULL,
+    relationship_concept_id integer NOT NULL
+);
+
+
+ALTER TABLE fact_relationship OWNER TO omop_v5;
+
+--
+-- Name: hibernate_sequence; Type: SEQUENCE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE SEQUENCE hibernate_sequence
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE hibernate_sequence OWNER TO omop_v5;
+
+--
+-- Name: location; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE location (
+    location_id integer NOT NULL,
+    address_1 character varying(50),
+    address_2 character varying(50),
+    city character varying(50),
+    state character varying(2),
+    zip character varying(9),
+    county character varying(20),
+    location_source_value character varying(50)
+);
+
+
+ALTER TABLE location OWNER TO omop_v5;
+
+--
+-- Name: location_aud; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE location_aud (
+    location_id bigint NOT NULL,
+    rev integer NOT NULL,
+    revtype smallint,
+    address_1 character varying(255),
+    address_2 character varying(255),
+    city character varying(255),
+    country character varying(255),
+    location_source_value character varying(255),
+    state character varying(255),
+    zip character varying(255)
+);
+
+
+ALTER TABLE location_aud OWNER TO omop_v5;
+
+--
+-- Name: location_id_seq; Type: SEQUENCE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE SEQUENCE location_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE location_id_seq OWNER TO omop_v5;
+
+--
+-- Name: measurement_occurrence_id_seq; Type: SEQUENCE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE SEQUENCE measurement_occurrence_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE measurement_occurrence_id_seq OWNER TO omop_v5;
+
+--
+-- Name: note; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE note (
+    note_id integer NOT NULL,
+    person_id integer NOT NULL,
+    note_date date NOT NULL,
+    note_time character varying(10),
+    note_type_concept_id integer NOT NULL,
+    note_text text NOT NULL,
+    provider_id integer,
+    visit_occurrence_id integer,
+    note_source_value character varying(50)
+);
+
+
+ALTER TABLE note OWNER TO omop_v5;
+
+--
+-- Name: observation_occurrence_id_seq; Type: SEQUENCE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE SEQUENCE observation_occurrence_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE observation_occurrence_id_seq OWNER TO omop_v5;
+
+--
+-- Name: observation_period; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE observation_period (
+    observation_period_id integer NOT NULL,
+    person_id integer NOT NULL,
+    observation_period_start_date date NOT NULL,
+    observation_period_end_date date NOT NULL,
+    period_type_concept_id integer NOT NULL
+);
+
+
+ALTER TABLE observation_period OWNER TO omop_v5;
+
+--
+-- Name: payer_plan_period; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE payer_plan_period (
+    payer_plan_period_id integer NOT NULL,
+    person_id integer NOT NULL,
+    payer_plan_period_start_date date NOT NULL,
+    payer_plan_period_end_date date NOT NULL,
+    payer_source_value character varying(50),
+    plan_source_value character varying(50),
+    family_source_value character varying(50)
+);
+
+
+ALTER TABLE payer_plan_period OWNER TO omop_v5;
+
+--
+-- Name: person; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE person (
+    person_id integer NOT NULL,
+    gender_concept_id integer NOT NULL,
+    year_of_birth integer NOT NULL,
+    month_of_birth integer,
+    day_of_birth integer,
+    time_of_birth character varying(10),
+    race_concept_id integer NOT NULL,
+    ethnicity_concept_id integer NOT NULL,
+    location_id integer,
+    provider_id integer,
+    care_site_id integer,
+    person_source_value character varying(50),
+    gender_source_value character varying(50),
+    gender_source_concept_id integer,
+    race_source_value character varying(50),
+    race_source_concept_id integer,
+    ethnicity_source_value character varying(50),
+    ethnicity_source_concept_id integer
+);
+
+
+ALTER TABLE person OWNER TO omop_v5;
+
+--
+-- Name: person_aud; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE person_aud (
+    person_id bigint NOT NULL,
+    rev integer NOT NULL,
+    revtype smallint,
+    day_of_birth integer,
+    ethnicity_source_value character varying(255),
+    gender_source_value character varying(255),
+    month_of_birth integer,
+    person_source_value character varying(255),
+    race_source_value character varying(255),
+    time_of_birth character varying(255),
+    year_of_birth integer,
+    care_site_id bigint,
+    ethnicity_concept_id bigint,
+    ethnicity_source_concept_id bigint,
+    gender_concept_id bigint,
+    gender_source_concept_id bigint,
+    location_id bigint,
+    provider_id bigint,
+    race_concept_id bigint,
+    race_source_concept_id bigint
+);
+
+
+ALTER TABLE person_aud OWNER TO omop_v5;
+
+--
+-- Name: person_id_seq; Type: SEQUENCE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE SEQUENCE person_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE person_id_seq OWNER TO omop_v5;
+
+--
+-- Name: procedure_occurrence; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE procedure_occurrence (
+    procedure_occurrence_id bigint,
+    person_id integer,
+    procedure_concept_id integer,
+    procedure_date date,
+    procedure_type_concept_id integer,
+    modifier_concept_id integer,
+    quantity integer,
+    provider_id integer,
+    visit_occurrence_id bigint,
+    procedure_source_value character varying(50),
+    procedure_source_concept_id integer,
+    qualifier_source_value character varying(50)
+);
+
+
+ALTER TABLE procedure_occurrence OWNER TO omop_v5;
+
+--
+-- Name: procedure_occurrence_id_seq; Type: SEQUENCE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE SEQUENCE procedure_occurrence_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE procedure_occurrence_id_seq OWNER TO omop_v5;
+
+--
+-- Name: provider; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE provider (
+    provider_id integer NOT NULL,
+    provider_name character varying(255),
+    npi character varying(20),
+    dea character varying(20),
+    specialty_concept_id integer,
+    care_site_id integer,
+    year_of_birth integer,
+    gender_concept_id integer,
+    provider_source_value character varying(50),
+    specialty_source_value character varying(50),
+    specialty_source_concept_id integer,
+    gender_source_value character varying(50),
+    gender_source_concept_id integer
+);
+
+
+ALTER TABLE provider OWNER TO omop_v5;
+
+--
+-- Name: provider_aud; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE provider_aud (
+    provider_id bigint NOT NULL,
+    rev integer NOT NULL,
+    revtype smallint,
+    dea character varying(255),
+    gender_source_value character varying(255),
+    npi character varying(255),
+    provider_name character varying(255),
+    provider_source_value character varying(255),
+    specialty_source_value character varying(255),
+    year_of_birth integer,
+    care_site_id bigint,
+    gender_concept_id bigint,
+    gender_source_concept_id bigint,
+    specialty_concept_id bigint,
+    specialty_source_concept_id bigint
+);
+
+
+ALTER TABLE provider_aud OWNER TO omop_v5;
+
+--
+-- Name: provider_id_seq; Type: SEQUENCE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE SEQUENCE provider_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE provider_id_seq OWNER TO omop_v5;
+
+--
+-- Name: relationship; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE relationship (
+    relationship_id character varying(20) NOT NULL,
+    relationship_name character varying(255) NOT NULL,
+    is_hierarchical character varying(1) NOT NULL,
+    defines_ancestry character varying(1) NOT NULL,
+    reverse_relationship_id character varying(20) NOT NULL,
+    relationship_concept_id integer NOT NULL
+);
+
+
+ALTER TABLE relationship OWNER TO omop_v5;
+
+--
+-- Name: revinfo; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE revinfo (
+    rev integer NOT NULL,
+    revtstmp bigint
+);
+
+
+ALTER TABLE revinfo OWNER TO omop_v5;
+
+--
+-- Name: smart_launch_context; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE smart_launch_context (
+    launch_id bigint NOT NULL,
+    client_id character varying(255),
+    created_at timestamp without time zone,
+    created_by character varying(255),
+    username character varying(255)
+);
+
+
+ALTER TABLE smart_launch_context OWNER TO omop_v5;
+
+--
+-- Name: smart_launch_context_launch_id_seq; Type: SEQUENCE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE SEQUENCE smart_launch_context_launch_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE smart_launch_context_launch_id_seq OWNER TO omop_v5;
+
+--
+-- Name: smart_launch_context_params; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE smart_launch_context_params (
+    id bigint NOT NULL,
+    param_name character varying(255),
+    param_value character varying(255),
+    launch_context_id bigint
+);
+
+
+ALTER TABLE smart_launch_context_params OWNER TO omop_v5;
+
+--
+-- Name: source_to_concept_map; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE source_to_concept_map (
+    source_code character varying(50) NOT NULL,
+    source_concept_id integer NOT NULL,
+    source_vocabulary_id character varying(20) NOT NULL,
+    source_code_description character varying(255),
+    target_concept_id integer NOT NULL,
+    target_vocabulary_id character varying(20) NOT NULL,
+    valid_start_date date NOT NULL,
+    valid_end_date date NOT NULL,
+    invalid_reason character varying(1)
+);
+
+
+ALTER TABLE source_to_concept_map OWNER TO omop_v5;
+
+--
+-- Name: specimen; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE specimen (
+    specimen_id integer NOT NULL,
+    person_id integer NOT NULL,
+    specimen_concept_id integer NOT NULL,
+    specimen_type_concept_id integer NOT NULL,
+    specimen_date date NOT NULL,
+    specimen_time character varying(10),
+    quantity numeric,
+    unit_concept_id integer,
+    anatomic_site_concept_id integer,
+    disease_status_concept_id integer,
+    specimen_source_id character varying(50),
+    specimen_source_value character varying(50),
+    unit_source_value character varying(50),
+    anatomic_site_source_value character varying(50),
+    disease_status_source_value character varying(50)
+);
+
+
+ALTER TABLE specimen OWNER TO omop_v5;
+
+--
+-- Name: stage_cond2; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE stage_cond2 (
+    name character varying(100),
+    cond_date date,
+    concept_id integer
+);
+
+
+ALTER TABLE stage_cond2 OWNER TO omop_v5;
+
+--
+-- Name: stage_condition; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE stage_condition (
+    cond_date date,
+    concept_id integer,
+    snomed integer
+);
+
+
+ALTER TABLE stage_condition OWNER TO omop_v5;
+
+--
+-- Name: stage_drug2; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE stage_drug2 (
+    name character varying(100),
+    rx_date date,
+    concept_id integer,
+    dosage character varying(50),
+    instructions character varying(100),
+    supply character varying(100)
+);
+
+
+ALTER TABLE stage_drug2 OWNER TO omop_v5;
+
+--
+-- Name: stage_procedure; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE stage_procedure (
+    location character varying(10),
+    proc_date date,
+    concept_id integer
+);
+
+
+ALTER TABLE stage_procedure OWNER TO omop_v5;
+
+--
+-- Name: stage_procedure2; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE stage_procedure2 (
+    name character varying(100),
+    procedure_date date,
+    concept_id integer,
+    value character varying(100)
+);
+
+
+ALTER TABLE stage_procedure2 OWNER TO omop_v5;
+
+--
+-- Name: stage_rx; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE stage_rx (
+    drug_date date,
+    concept_id integer,
+    rxnorm integer
+);
+
+
+ALTER TABLE stage_rx OWNER TO omop_v5;
+
+--
+-- Name: stage_visit; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE stage_visit (
+    visit_date date,
+    person_id integer,
+    visit_source_value character varying(20)
+);
+
+
+ALTER TABLE stage_visit OWNER TO omop_v5;
+
+--
+-- Name: stage_visit2; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE stage_visit2 (
+    visit_location character varying(100),
+    visit_date date
+);
+
+
+ALTER TABLE stage_visit2 OWNER TO omop_v5;
+
+--
+-- Name: visit_occurrence; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE visit_occurrence (
+    visit_occurrence_id bigint NOT NULL,
+    person_id integer,
+    visit_concept_id integer,
+    visit_start_date date,
+    visit_start_time character varying(10),
+    visit_end_date date,
+    visit_end_time character varying(10),
+    visit_type_concept_id integer,
+    provider_id integer,
+    care_site_id integer,
+    visit_source_value character varying(50),
+    visit_source_concept_id integer
+);
+
+
+ALTER TABLE visit_occurrence OWNER TO omop_v5;
+
+--
+-- Name: visit_occurrence_aud; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE visit_occurrence_aud (
+    visit_occurrence_id bigint NOT NULL,
+    rev integer NOT NULL,
+    revtype smallint,
+    visit_end_date timestamp without time zone,
+    visit_end_time character varying(255),
+    visit_start_date timestamp without time zone,
+    visit_start_time character varying(255),
+    visit_source_value character varying(255),
+    care_site_id bigint,
+    person_id bigint,
+    provider_id bigint,
+    visit_concept_id bigint,
+    visit_source_concept_id bigint,
+    visit_type_concept_id bigint
+);
+
+
+ALTER TABLE visit_occurrence_aud OWNER TO omop_v5;
+
+--
+-- Name: visit_occurrence_id_seq; Type: SEQUENCE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE SEQUENCE visit_occurrence_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE visit_occurrence_id_seq OWNER TO omop_v5;
+
+--
+-- Name: vocabulary; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE vocabulary (
+    vocabulary_id character varying(20) NOT NULL,
+    vocabulary_name character varying(255) NOT NULL,
+    vocabulary_reference character varying(255),
+    vocabulary_version character varying(255),
+    vocabulary_concept_id integer NOT NULL
+);
+
+
+ALTER TABLE vocabulary OWNER TO omop_v5;
+
+--
+-- Name: vocabulary_aud; Type: TABLE; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE TABLE vocabulary_aud (
+    vocabulary_id character varying(255) NOT NULL,
+    rev integer NOT NULL,
+    revtype smallint,
+    vocabulary_name character varying(255),
+    vocabulary_reference character varying(255)
+);
+
+
+ALTER TABLE vocabulary_aud OWNER TO omop_v5;
+
+--
+-- Name: care_site_aud_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY care_site_aud
+    ADD CONSTRAINT care_site_aud_pkey PRIMARY KEY (care_site_id, rev);
+
+
+--
+-- Name: concept_aud_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY concept_aud
+    ADD CONSTRAINT concept_aud_pkey PRIMARY KEY (concept_id, rev);
+
+
+--
+-- Name: condition_occurrence_aud_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY condition_occurrence_aud
+    ADD CONSTRAINT condition_occurrence_aud_pkey PRIMARY KEY (condition_occurrence_id, rev);
+
+
+--
+-- Name: device_exposure_aud_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY device_exposure_aud
+    ADD CONSTRAINT device_exposure_aud_pkey PRIMARY KEY (device_exposure_id, rev);
+
+
+--
+-- Name: drug_exposure_aud_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY drug_exposure_aud
+    ADD CONSTRAINT drug_exposure_aud_pkey PRIMARY KEY (drug_exposure_id, rev);
+
+
+--
+-- Name: f_person_aud_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY f_person_aud
+    ADD CONSTRAINT f_person_aud_pkey PRIMARY KEY (person_id, rev);
+
+
+--
+-- Name: location_aud_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY location_aud
+    ADD CONSTRAINT location_aud_pkey PRIMARY KEY (location_id, rev);
+
+
+--
+-- Name: person_aud_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY person_aud
+    ADD CONSTRAINT person_aud_pkey PRIMARY KEY (person_id, rev);
+
+
+--
+-- Name: provider_aud_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY provider_aud
+    ADD CONSTRAINT provider_aud_pkey PRIMARY KEY (provider_id, rev);
+
+
+--
+-- Name: revinfo_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY revinfo
+    ADD CONSTRAINT revinfo_pkey PRIMARY KEY (rev);
+
+
+--
+-- Name: smart_launch_context_params_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY smart_launch_context_params
+    ADD CONSTRAINT smart_launch_context_params_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: smart_launch_context_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY smart_launch_context
+    ADD CONSTRAINT smart_launch_context_pkey PRIMARY KEY (launch_id);
+
+
+--
+-- Name: visit_occurrence_aud_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY visit_occurrence_aud
+    ADD CONSTRAINT visit_occurrence_aud_pkey PRIMARY KEY (visit_occurrence_id, rev);
+
+
+--
+-- Name: vocabulary_aud_pkey; Type: CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY vocabulary_aud
+    ADD CONSTRAINT vocabulary_aud_pkey PRIMARY KEY (vocabulary_id, rev);
+
+
+--
+-- Name: f_person_person_id_idx; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX f_person_person_id_idx ON f_person USING btree (person_id);
+
+
+--
+-- Name: idx_attribute_definition_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_attribute_definition_id ON attribute_definition USING btree (attribute_definition_id);
+
+ALTER TABLE attribute_definition CLUSTER ON idx_attribute_definition_id;
+
+
+--
+-- Name: idx_ca_definition_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_ca_definition_id ON cohort_attribute USING btree (cohort_definition_id);
+
+
+--
+-- Name: idx_ca_subject_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_ca_subject_id ON cohort_attribute USING btree (subject_id);
+
+
+--
+-- Name: idx_cohort_c_definition_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_cohort_c_definition_id ON cohort USING btree (cohort_definition_id);
+
+
+--
+-- Name: idx_cohort_definition_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_cohort_definition_id ON cohort_definition USING btree (cohort_definition_id);
+
+ALTER TABLE cohort_definition CLUSTER ON idx_cohort_definition_id;
+
+
+--
+-- Name: idx_cohort_subject_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_cohort_subject_id ON cohort USING btree (subject_id);
+
+
+--
+-- Name: idx_concept_ancestor_id_1; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_concept_ancestor_id_1 ON concept_ancestor USING btree (ancestor_concept_id);
+
+ALTER TABLE concept_ancestor CLUSTER ON idx_concept_ancestor_id_1;
+
+
+--
+-- Name: idx_concept_ancestor_id_2; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_concept_ancestor_id_2 ON concept_ancestor USING btree (descendant_concept_id);
+
+
+--
+-- Name: idx_concept_class_class_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE UNIQUE INDEX idx_concept_class_class_id ON concept_class USING btree (concept_class_id);
+
+ALTER TABLE concept_class CLUSTER ON idx_concept_class_class_id;
+
+
+--
+-- Name: idx_concept_class_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_concept_class_id ON concept USING btree (concept_class_id);
+
+
+--
+-- Name: idx_concept_code; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_concept_code ON concept USING btree (concept_code);
+
+
+--
+-- Name: idx_concept_concept_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE UNIQUE INDEX idx_concept_concept_id ON concept USING btree (concept_id);
+
+ALTER TABLE concept CLUSTER ON idx_concept_concept_id;
+
+
+--
+-- Name: idx_concept_domain_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_concept_domain_id ON concept USING btree (domain_id);
+
+
+--
+-- Name: idx_concept_relationship_id_1; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_concept_relationship_id_1 ON concept_relationship USING btree (concept_id_1);
+
+
+--
+-- Name: idx_concept_relationship_id_2; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_concept_relationship_id_2 ON concept_relationship USING btree (concept_id_2);
+
+
+--
+-- Name: idx_concept_relationship_id_3; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_concept_relationship_id_3 ON concept_relationship USING btree (relationship_id);
+
+
+--
+-- Name: idx_concept_synonym_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_concept_synonym_id ON concept_synonym USING btree (concept_id);
+
+ALTER TABLE concept_synonym CLUSTER ON idx_concept_synonym_id;
+
+
+--
+-- Name: idx_concept_vocabluary_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_concept_vocabluary_id ON concept USING btree (vocabulary_id);
+
+
+--
+-- Name: idx_condition_era_concept_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_condition_era_concept_id ON condition_era USING btree (condition_concept_id);
+
+
+--
+-- Name: idx_condition_era_person_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_condition_era_person_id ON condition_era USING btree (person_id);
+
+ALTER TABLE condition_era CLUSTER ON idx_condition_era_person_id;
+
+
+--
+-- Name: idx_death_person_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_death_person_id ON death USING btree (person_id);
+
+ALTER TABLE death CLUSTER ON idx_death_person_id;
+
+
+--
+-- Name: idx_device_concept_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_device_concept_id ON device_exposure USING btree (device_concept_id);
+
+
+--
+-- Name: idx_device_person_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_device_person_id ON device_exposure USING btree (person_id);
+
+ALTER TABLE device_exposure CLUSTER ON idx_device_person_id;
+
+
+--
+-- Name: idx_device_visit_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_device_visit_id ON device_exposure USING btree (visit_occurrence_id);
+
+
+--
+-- Name: idx_domain_domain_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE UNIQUE INDEX idx_domain_domain_id ON domain USING btree (domain_id);
+
+ALTER TABLE domain CLUSTER ON idx_domain_domain_id;
+
+
+--
+-- Name: idx_dose_era_concept_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_dose_era_concept_id ON dose_era USING btree (drug_concept_id);
+
+
+--
+-- Name: idx_dose_era_person_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_dose_era_person_id ON dose_era USING btree (person_id);
+
+ALTER TABLE dose_era CLUSTER ON idx_dose_era_person_id;
+
+
+--
+-- Name: idx_drug_concept_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_drug_concept_id ON drug_exposure USING btree (drug_concept_id);
+
+
+--
+-- Name: idx_drug_era_concept_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_drug_era_concept_id ON drug_era USING btree (drug_concept_id);
+
+
+--
+-- Name: idx_drug_era_person_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_drug_era_person_id ON drug_era USING btree (person_id);
+
+ALTER TABLE drug_era CLUSTER ON idx_drug_era_person_id;
+
+
+--
+-- Name: idx_drug_person_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_drug_person_id ON drug_exposure USING btree (person_id);
+
+ALTER TABLE drug_exposure CLUSTER ON idx_drug_person_id;
+
+
+--
+-- Name: idx_drug_strength_id_1; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_drug_strength_id_1 ON drug_strength USING btree (drug_concept_id);
+
+ALTER TABLE drug_strength CLUSTER ON idx_drug_strength_id_1;
+
+
+--
+-- Name: idx_drug_strength_id_2; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_drug_strength_id_2 ON drug_strength USING btree (ingredient_concept_id);
+
+
+--
+-- Name: idx_drug_visit_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_drug_visit_id ON drug_exposure USING btree (visit_occurrence_id);
+
+
+--
+-- Name: idx_fact_relationship_id_1; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_fact_relationship_id_1 ON fact_relationship USING btree (domain_concept_id_1);
+
+
+--
+-- Name: idx_fact_relationship_id_2; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_fact_relationship_id_2 ON fact_relationship USING btree (domain_concept_id_2);
+
+
+--
+-- Name: idx_fact_relationship_id_3; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_fact_relationship_id_3 ON fact_relationship USING btree (relationship_concept_id);
+
+
+--
+-- Name: idx_measurement_concept_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_measurement_concept_id ON measurement USING btree (measurement_concept_id);
+
+
+--
+-- Name: idx_measurement_person_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_measurement_person_id ON measurement USING btree (person_id);
+
+ALTER TABLE measurement CLUSTER ON idx_measurement_person_id;
+
+
+--
+-- Name: idx_measurement_visit_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_measurement_visit_id ON measurement USING btree (visit_occurrence_id);
+
+
+--
+-- Name: idx_note_concept_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_note_concept_id ON note USING btree (note_type_concept_id);
+
+
+--
+-- Name: idx_note_person_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_note_person_id ON note USING btree (person_id);
+
+ALTER TABLE note CLUSTER ON idx_note_person_id;
+
+
+--
+-- Name: idx_note_visit_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_note_visit_id ON note USING btree (visit_occurrence_id);
+
+
+--
+-- Name: idx_observation_concept_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_observation_concept_id ON observation USING btree (observation_concept_id);
+
+
+--
+-- Name: idx_observation_period_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_observation_period_id ON observation_period USING btree (person_id);
+
+ALTER TABLE observation_period CLUSTER ON idx_observation_period_id;
+
+
+--
+-- Name: idx_observation_person_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_observation_person_id ON observation USING btree (person_id);
+
+ALTER TABLE observation CLUSTER ON idx_observation_person_id;
+
+
+--
+-- Name: idx_observation_visit_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_observation_visit_id ON observation USING btree (visit_occurrence_id);
+
+
+--
+-- Name: idx_period_person_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_period_person_id ON payer_plan_period USING btree (person_id);
+
+ALTER TABLE payer_plan_period CLUSTER ON idx_period_person_id;
+
+
+--
+-- Name: idx_person_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE UNIQUE INDEX idx_person_id ON person USING btree (person_id);
+
+ALTER TABLE person CLUSTER ON idx_person_id;
+
+
+--
+-- Name: idx_relationship_rel_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE UNIQUE INDEX idx_relationship_rel_id ON relationship USING btree (relationship_id);
+
+ALTER TABLE relationship CLUSTER ON idx_relationship_rel_id;
+
+
+--
+-- Name: idx_source_to_concept_map_code; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_source_to_concept_map_code ON source_to_concept_map USING btree (source_code);
+
+
+--
+-- Name: idx_source_to_concept_map_id_1; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_source_to_concept_map_id_1 ON source_to_concept_map USING btree (source_vocabulary_id);
+
+
+--
+-- Name: idx_source_to_concept_map_id_2; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_source_to_concept_map_id_2 ON source_to_concept_map USING btree (target_vocabulary_id);
+
+
+--
+-- Name: idx_source_to_concept_map_id_3; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_source_to_concept_map_id_3 ON source_to_concept_map USING btree (target_concept_id);
+
+ALTER TABLE source_to_concept_map CLUSTER ON idx_source_to_concept_map_id_3;
+
+
+--
+-- Name: idx_specimen_concept_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_specimen_concept_id ON specimen USING btree (specimen_concept_id);
+
+
+--
+-- Name: idx_specimen_person_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE INDEX idx_specimen_person_id ON specimen USING btree (person_id);
+
+ALTER TABLE specimen CLUSTER ON idx_specimen_person_id;
+
+
+--
+-- Name: idx_vocabulary_vocabulary_id; Type: INDEX; Schema: omop_v5; Owner: omop_v5
+--
+
+CREATE UNIQUE INDEX idx_vocabulary_vocabulary_id ON vocabulary USING btree (vocabulary_id);
+
+ALTER TABLE vocabulary CLUSTER ON idx_vocabulary_vocabulary_id;
+
+
+--
+-- Name: fk_3lbbgfm9xfpo5o5229ekacbs4; Type: FK CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY drug_exposure_aud
+    ADD CONSTRAINT fk_3lbbgfm9xfpo5o5229ekacbs4 FOREIGN KEY (rev) REFERENCES revinfo(rev);
+
+
+--
+-- Name: fk_3lqwt4umghb9mlljwb9fb8f5f; Type: FK CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY provider_aud
+    ADD CONSTRAINT fk_3lqwt4umghb9mlljwb9fb8f5f FOREIGN KEY (rev) REFERENCES revinfo(rev);
+
+
+--
+-- Name: fk_4totr11r40fhgxyvlsjy1u3js; Type: FK CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY location_aud
+    ADD CONSTRAINT fk_4totr11r40fhgxyvlsjy1u3js FOREIGN KEY (rev) REFERENCES revinfo(rev);
+
+
+--
+-- Name: fk_4xeocbu1m3ce6wgjc3ygvo3l1; Type: FK CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY device_exposure_aud
+    ADD CONSTRAINT fk_4xeocbu1m3ce6wgjc3ygvo3l1 FOREIGN KEY (rev) REFERENCES revinfo(rev);
+
+
+--
+-- Name: fk_5xwq7fhl4p56lm6xyoxn5lu76; Type: FK CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY condition_occurrence_aud
+    ADD CONSTRAINT fk_5xwq7fhl4p56lm6xyoxn5lu76 FOREIGN KEY (rev) REFERENCES revinfo(rev);
+
+
+--
+-- Name: fk_6w5pi5icqmqcold93j69q93qi; Type: FK CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY visit_occurrence_aud
+    ADD CONSTRAINT fk_6w5pi5icqmqcold93j69q93qi FOREIGN KEY (rev) REFERENCES revinfo(rev);
+
+
+--
+-- Name: fk_8obg5cf13jvafhjc5bealf4eq; Type: FK CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY care_site_aud
+    ADD CONSTRAINT fk_8obg5cf13jvafhjc5bealf4eq FOREIGN KEY (rev) REFERENCES revinfo(rev);
+
+
+--
+-- Name: fk_9bb6e6mgyjdmuaah491d32n11; Type: FK CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY smart_launch_context_params
+    ADD CONSTRAINT fk_9bb6e6mgyjdmuaah491d32n11 FOREIGN KEY (launch_context_id) REFERENCES smart_launch_context(launch_id) ON DELETE CASCADE;
+
+
+--
+-- Name: fk_hvhc8n3pslqac4afkiq58y1k7; Type: FK CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY person_aud
+    ADD CONSTRAINT fk_hvhc8n3pslqac4afkiq58y1k7 FOREIGN KEY (rev) REFERENCES revinfo(rev);
+
+
+--
+-- Name: fk_idb5ied691nu8objlcmasss9m; Type: FK CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY concept_aud
+    ADD CONSTRAINT fk_idb5ied691nu8objlcmasss9m FOREIGN KEY (rev) REFERENCES revinfo(rev);
+
+
+--
+-- Name: fk_lbqpyifbyscyo5ir9sxg4tlb2; Type: FK CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY vocabulary_aud
+    ADD CONSTRAINT fk_lbqpyifbyscyo5ir9sxg4tlb2 FOREIGN KEY (rev) REFERENCES revinfo(rev);
+
+
+--
+-- Name: fk_tekepx5veee8qwj5qly4yj6m5; Type: FK CONSTRAINT; Schema: omop_v5; Owner: omop_v5
+--
+
+ALTER TABLE ONLY f_person_aud
+    ADD CONSTRAINT fk_tekepx5veee8qwj5qly4yj6m5 FOREIGN KEY (person_id, rev) REFERENCES person_aud(person_id, rev);
+
+
+--
+-- Name: attribute_definition; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE attribute_definition FROM PUBLIC;
+REVOKE ALL ON TABLE attribute_definition FROM omop_v5;
+GRANT ALL ON TABLE attribute_definition TO omop_v5;
+
+
+--
+-- Name: care_site; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE care_site FROM PUBLIC;
+REVOKE ALL ON TABLE care_site FROM omop_v5;
+GRANT ALL ON TABLE care_site TO omop_v5;
+
+
+--
+-- Name: cdm_source; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE cdm_source FROM PUBLIC;
+REVOKE ALL ON TABLE cdm_source FROM omop_v5;
+GRANT ALL ON TABLE cdm_source TO omop_v5;
+
+
+--
+-- Name: cohort; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE cohort FROM PUBLIC;
+REVOKE ALL ON TABLE cohort FROM omop_v5;
+GRANT ALL ON TABLE cohort TO omop_v5;
+
+
+--
+-- Name: cohort_attribute; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE cohort_attribute FROM PUBLIC;
+REVOKE ALL ON TABLE cohort_attribute FROM omop_v5;
+GRANT ALL ON TABLE cohort_attribute TO omop_v5;
+
+
+--
+-- Name: cohort_definition; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE cohort_definition FROM PUBLIC;
+REVOKE ALL ON TABLE cohort_definition FROM omop_v5;
+GRANT ALL ON TABLE cohort_definition TO omop_v5;
+
+
+--
+-- Name: concept; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE concept FROM PUBLIC;
+REVOKE ALL ON TABLE concept FROM omop_v5;
+GRANT ALL ON TABLE concept TO omop_v5;
+
+
+--
+-- Name: concept_ancestor; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE concept_ancestor FROM PUBLIC;
+REVOKE ALL ON TABLE concept_ancestor FROM omop_v5;
+GRANT ALL ON TABLE concept_ancestor TO omop_v5;
+
+
+--
+-- Name: concept_class; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE concept_class FROM PUBLIC;
+REVOKE ALL ON TABLE concept_class FROM omop_v5;
+GRANT ALL ON TABLE concept_class TO omop_v5;
+
+
+--
+-- Name: concept_relationship; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE concept_relationship FROM PUBLIC;
+REVOKE ALL ON TABLE concept_relationship FROM omop_v5;
+GRANT ALL ON TABLE concept_relationship TO omop_v5;
+
+
+--
+-- Name: concept_synonym; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE concept_synonym FROM PUBLIC;
+REVOKE ALL ON TABLE concept_synonym FROM omop_v5;
+GRANT ALL ON TABLE concept_synonym TO omop_v5;
+
+
+--
+-- Name: condition_era; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE condition_era FROM PUBLIC;
+REVOKE ALL ON TABLE condition_era FROM omop_v5;
+GRANT ALL ON TABLE condition_era TO omop_v5;
+
+
+--
+-- Name: condition_occurrence; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE condition_occurrence FROM PUBLIC;
+REVOKE ALL ON TABLE condition_occurrence FROM omop_v5;
+GRANT ALL ON TABLE condition_occurrence TO omop_v5;
+GRANT ALL ON TABLE condition_occurrence TO postgres;
+
+
+--
+-- Name: cost; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE cost FROM PUBLIC;
+REVOKE ALL ON TABLE cost FROM omop_v5;
+GRANT ALL ON TABLE cost TO omop_v5;
+
+
+--
+-- Name: death; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE death FROM PUBLIC;
+REVOKE ALL ON TABLE death FROM omop_v5;
+GRANT ALL ON TABLE death TO omop_v5;
+
+
+--
+-- Name: device_exposure; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE device_exposure FROM PUBLIC;
+REVOKE ALL ON TABLE device_exposure FROM omop_v5;
+GRANT ALL ON TABLE device_exposure TO omop_v5;
+
+
+--
+-- Name: domain; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE domain FROM PUBLIC;
+REVOKE ALL ON TABLE domain FROM omop_v5;
+GRANT ALL ON TABLE domain TO omop_v5;
+
+
+--
+-- Name: dose_era; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE dose_era FROM PUBLIC;
+REVOKE ALL ON TABLE dose_era FROM omop_v5;
+GRANT ALL ON TABLE dose_era TO omop_v5;
+
+
+--
+-- Name: drug_era; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE drug_era FROM PUBLIC;
+REVOKE ALL ON TABLE drug_era FROM omop_v5;
+GRANT ALL ON TABLE drug_era TO omop_v5;
+
+
+--
+-- Name: drug_exposure; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE drug_exposure FROM PUBLIC;
+REVOKE ALL ON TABLE drug_exposure FROM omop_v5;
+GRANT ALL ON TABLE drug_exposure TO omop_v5;
+
+
+--
+-- Name: drug_strength; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE drug_strength FROM PUBLIC;
+REVOKE ALL ON TABLE drug_strength FROM omop_v5;
+GRANT ALL ON TABLE drug_strength TO omop_v5;
+
+
+--
+-- Name: measurement; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE measurement FROM PUBLIC;
+REVOKE ALL ON TABLE measurement FROM omop_v5;
+GRANT ALL ON TABLE measurement TO omop_v5;
+
+
+--
+-- Name: observation; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE observation FROM PUBLIC;
+REVOKE ALL ON TABLE observation FROM omop_v5;
+GRANT ALL ON TABLE observation TO omop_v5;
+
+
+--
+-- Name: f_person; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE f_person FROM PUBLIC;
+REVOKE ALL ON TABLE f_person FROM omop_v5;
+GRANT ALL ON TABLE f_person TO omop_v5;
+
+
+--
+-- Name: fact_relationship; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE fact_relationship FROM PUBLIC;
+REVOKE ALL ON TABLE fact_relationship FROM omop_v5;
+GRANT ALL ON TABLE fact_relationship TO omop_v5;
+
+
+--
+-- Name: location; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE location FROM PUBLIC;
+REVOKE ALL ON TABLE location FROM omop_v5;
+GRANT ALL ON TABLE location TO omop_v5;
+
+
+--
+-- Name: note; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE note FROM PUBLIC;
+REVOKE ALL ON TABLE note FROM omop_v5;
+GRANT ALL ON TABLE note TO omop_v5;
+
+
+--
+-- Name: observation_period; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE observation_period FROM PUBLIC;
+REVOKE ALL ON TABLE observation_period FROM omop_v5;
+GRANT ALL ON TABLE observation_period TO omop_v5;
+
+
+--
+-- Name: payer_plan_period; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE payer_plan_period FROM PUBLIC;
+REVOKE ALL ON TABLE payer_plan_period FROM omop_v5;
+GRANT ALL ON TABLE payer_plan_period TO omop_v5;
+
+
+--
+-- Name: person; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE person FROM PUBLIC;
+REVOKE ALL ON TABLE person FROM omop_v5;
+GRANT ALL ON TABLE person TO omop_v5;
+
+
+--
+-- Name: procedure_occurrence; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE procedure_occurrence FROM PUBLIC;
+REVOKE ALL ON TABLE procedure_occurrence FROM omop_v5;
+GRANT ALL ON TABLE procedure_occurrence TO omop_v5;
+GRANT ALL ON TABLE procedure_occurrence TO postgres;
+
+
+--
+-- Name: provider; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE provider FROM PUBLIC;
+REVOKE ALL ON TABLE provider FROM omop_v5;
+GRANT ALL ON TABLE provider TO omop_v5;
+
+
+--
+-- Name: relationship; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE relationship FROM PUBLIC;
+REVOKE ALL ON TABLE relationship FROM omop_v5;
+GRANT ALL ON TABLE relationship TO omop_v5;
+
+
+--
+-- Name: source_to_concept_map; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE source_to_concept_map FROM PUBLIC;
+REVOKE ALL ON TABLE source_to_concept_map FROM omop_v5;
+GRANT ALL ON TABLE source_to_concept_map TO omop_v5;
+
+
+--
+-- Name: specimen; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE specimen FROM PUBLIC;
+REVOKE ALL ON TABLE specimen FROM omop_v5;
+GRANT ALL ON TABLE specimen TO omop_v5;
+
+
+--
+-- Name: visit_occurrence; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE visit_occurrence FROM PUBLIC;
+REVOKE ALL ON TABLE visit_occurrence FROM omop_v5;
+GRANT ALL ON TABLE visit_occurrence TO omop_v5;
+GRANT ALL ON TABLE visit_occurrence TO postgres;
+
+
+--
+-- Name: vocabulary; Type: ACL; Schema: omop_v5; Owner: omop_v5
+--
+
+REVOKE ALL ON TABLE vocabulary FROM PUBLIC;
+REVOKE ALL ON TABLE vocabulary FROM omop_v5;
+GRANT ALL ON TABLE vocabulary TO omop_v5;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

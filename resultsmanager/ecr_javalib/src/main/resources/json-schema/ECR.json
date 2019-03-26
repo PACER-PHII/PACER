@@ -1,0 +1,366 @@
+{
+	"$schema": "http://json-schema.org/schema#",
+	"id": "https://git2.icl.gtri.org/projects/CDCSTI/repos/json-schema/ECR.json#",
+	"type": ["object", "null"],
+	"Sending Application": ["string","null"],
+	
+	"Provider": {
+		"type": ["object", "null"],
+		"properties": {
+			"ID": {
+				"type": ["integer", "null"]
+			},
+
+			"Name": {
+				"type": ["string", "null"]
+			},
+
+			"Phone": {
+				"type": ["string", "null"]
+			},
+
+			"Fax": {
+				"type": ["string", "null"]
+			},
+
+			"Email": {
+				"type": ["string", "null"]
+			},
+
+			"Facility": {
+				"type": ["string", "null"]
+			},
+			"Address": {
+				"type": ["string", "null"]
+			},
+			"Country": {
+				"type": ["string", "null"]
+			}
+		}
+	},
+	"Facility": {
+		"type": ["object", "null"],
+		"properties": {
+			"ID": {
+				"type": ["integer", "null"]
+			},
+			"Name": {
+				"type": ["string", "null"]
+			},
+
+			"Phone": {
+				"type": ["string", "null"]
+			},
+			"Address": {
+				"type": ["string", "null"]
+			},
+			"Fax": {
+				"type": ["string", "null"]
+			},
+			"Hospital_Unit": {
+				"type": ["string", "null"]
+			}
+		}
+	},
+	"Patient": {
+		"type": ["object", "null"],
+		"properties": {
+			"ID": {
+				"type": ["String", "null"]
+			},
+			"Name": {
+				"type": ["object", "null"],
+				"given": {
+					"type": ["string", "null"]
+				},
+				"family": {
+					"type": ["string", "null"]
+				}
+			},
+
+			"Parents_Guardians": {
+				"type": "array",
+				"items": {
+					"type": ["object", "null"],
+					"properties": {
+						"Name": {
+							"type": ["object", "null"],
+							"properties": {
+								"given": {
+									"type": ["string", "null"]
+								},
+								"family": {
+									"type": ["string", "null"]
+								}
+							}
+						},
+
+						"Phone": {
+							"type": ["string", "null"]
+						},
+
+						"Email": {
+							"type": ["string", "null"]
+						}
+					}
+				}
+			},
+			"Street_Address": {
+				"type": ["string", "null"]
+			},
+
+			"Birth_Date": {
+				"type": ["string", "null"]
+			},
+
+			"Sex": {
+				"type": ["string", "null"]
+			},
+
+			"PatientClass": {
+				"type": ["string", "null"]
+			},
+
+			"Race": {
+				"type": ["string", "null"]
+			},
+
+			"Ethnicity": {
+				"type": ["object", "null"],
+				"properties": {
+					"Code": {
+						"type": ["string", "null"]
+					},
+					"System": {
+						"type": ["string", "null"]
+					},
+					"Display": {
+						"type": ["string", "null"]
+					}
+				}
+			},
+
+			"Preferred_Language": {
+				"properties": {
+					"Code": {
+						"type": ["string", "null"]
+					},
+					"System": {
+						"type": ["string", "null"]
+					},
+					"Display": {
+						"type": ["string", "null"]
+					}
+				}
+			},
+
+			"Occupation": {
+				"type": ["string", "null"]
+			},
+
+			"Pregnant": {
+				"type": ["boolean", "null"]
+			},
+			"Travel_History": {
+				"type": "array",
+				"items": {
+
+				}
+			},
+
+			"Insurance_Type": {
+				"type": ["Object", "null"],
+				"properties":{
+					"Code": {
+						"type": ["string", "null"]
+					},
+					"System": {
+						"type": ["string", "null"]
+					},
+					"Display": {
+						"type": ["string", "null"]
+					}
+				}
+			},
+
+			"Immunization_History": {
+				"type": ["array", "null"],
+				"items": {
+					"type": ["object", "null"],
+					"properties": {
+						"Code": {
+							"type": ["string", "null"]
+						},
+						"System": {
+							"type": ["string", "null"]
+						},
+						"Date": {
+							"type" : ["string", "null"]
+						}
+					}
+				}
+			},
+
+			"Visit_DateTime": {
+				"type": ["string", "null"]
+			},
+
+			"Admission_DateTime": {
+				"type": ["string", "null"]
+			},
+
+			"Date_of_Onset": {
+				"type": ["string", "null"]
+			},
+
+			"Symptoms": {
+				"type": ["array", "null"],
+				"items": {
+					"type": ["object", "null"],
+					"properties": {
+						"Code": {
+							"type": ["string", "null"]
+						},
+						"System": {
+							"type": ["string", "null"]
+						},
+						"Diplay": {
+							"type" : ["string", "null"]
+						}
+					}
+				}
+			}
+		},
+
+		"Lab_Order_Code": {
+			"type": ["Object", "null"],
+			"properties":{
+				"Code": {
+					"type": ["string", "null"]
+				},
+				"System": {
+					"type": ["string", "null"]
+				},
+				"Display": {
+					"type": ["string", "null"]
+				}
+			}
+		},
+
+		"Placer Order Code": {
+			"type": ["string", "null"]
+		},
+
+		"Diagnosis": {
+			"type": ["object", "null"],
+			"properties": {
+				"Value": {
+					"type": ["string", "null"]
+				},
+				"ValueSetOID": {
+					"type": ["string", "null"]
+				},
+				"Date": {
+					"type": ["string", "null"]
+				}
+			}
+		},
+		"Medication Provided": {
+			"type": ["array", "null"],
+			"items": {
+				"Code": {
+					"type": ["string", "null"]
+				},
+				"System": {
+					"type": ["string", "null"]
+				},
+				"Display": {
+					"type": ["string", "null"]
+				},
+				"Dosage": {
+					"type": ["object", "string", "null"],
+					"properties": {
+						"Value":  {
+							"type": ["float", "null"]
+						},
+						"Unit": {
+							"type": ["object", "string", "null"],
+							"properties": {
+								"Code": {
+									"type": ["string", "null"]
+								},
+								"System": {
+									"type": ["string", "null"]
+								},
+								"Display": {
+									"type": ["string", "null"]
+								}
+							}
+						}
+					}
+				},
+				"Date": ["string", "null"],
+				"Frequency": ["string", "null"],
+			}
+		},
+
+		"Death_Date": {
+			"type": ["string", "null"]
+		},
+
+		"Date_Discharged": {
+			"type": ["string", "null"]
+		},
+
+		"Laboratory_Results": {
+			"type": ["object", "null"],
+			"properties": {
+				"type": ["object", "null"],
+				"properties": {
+					"Value": {
+						"type": ["string", "null"]
+					},
+					"ValueSetOID": {
+						"type": ["string", "null"]
+					}
+				}
+			}
+		},
+
+		"Trigger_Code": {
+			"type": ["array", "null"],
+			"items": {
+				"type": ["object", "null"],
+				"properties": {
+					"Code": {
+						"type": ["string", "null"]
+					},
+					"System": {
+						"type": ["string", "null"]
+					},
+					"Display": {
+						"type" : ["string", "null"]
+					}
+				}
+			}
+		},
+
+		"Lab_Tests_Performed": {
+			"type": ["array", "null"],
+			"items": {
+				"type": ["object", "null"],
+				"properties": {
+					"type": ["object", "null"],
+					"Value": {
+						"type": ["string", "null"]
+					},
+					"ResultStatus": {
+						"type": ["boolean", "null"]
+					}
+				}
+			}
+		}
+	},
+
+	"default": {}
+}

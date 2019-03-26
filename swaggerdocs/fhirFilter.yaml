@@ -1,0 +1,188 @@
+swagger: "2.0"
+info:
+  description: "This is FHIR Filter API to manage filter data."
+  version: "0.0.1"
+  title: "Access Filter Service"
+  contact:
+    email: "myung.choi@gtri.gatech.edu"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "apps.hdap.gatech.edu"
+basePath: "/fhirfilter"
+tags:
+- name: "manage"
+  description: "Getting the list of filter data"
+- name: "apply"
+  description: "Applying filtering service to fhir data"
+schemes:
+- "https"
+paths:
+  /manage:
+    post:
+      tags:
+      - "manage"
+      summary: "Add a new filter data to Access Filter server"
+      description: ""
+      operationId: ""
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "FHIR filter JSON data that needs to be added to the server"
+        required: true
+        schema:
+          $ref: "#/definitions/filterData"
+      responses:
+        405:
+          description: "Invalid input"
+    put:
+      tags:
+      - "manage"
+      summary: "Update an existing filter data"
+      description: ""
+      operationId: ""
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "FHIR filter JSON data that needs to be added to the server"
+        required: true
+        schema:
+          $ref: "#/definitions/filterData"
+      responses:
+        400:
+          description: "Invalid ID supplied"
+        404:
+          description: "Pet not found"
+        405:
+          description: "Validation exception"
+    get:
+      tags:
+      - "manage"
+      summary: "Get list of enter filter data"
+      description: "Returns entire filter data in list format"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: '#/definitions/listFilterData'
+        400:
+          description: "Invalid tag value"
+  /manage/{id}:
+    get:
+      tags:
+      - "manage"
+      summary: "get a filter data"
+      description: ""
+      operationId: "Get a filter data"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "ID of filter to get"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/filterData"
+    delete:
+      tags:
+      - "manage"
+      summary: "Deletes a filter data"
+      description: ""
+      operationId: "id"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Filter data id to delete"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        400:
+          description: "Invalid ID supplied"
+        404:
+          description: "Pet not found"
+  /apply:
+    get:
+      tags:
+      - "apply"
+      summary: "Apply filter(s) to FHIR data and return output"
+      description: "Provide FHIR data. Filters will be applied to FHIR data and redacted data will be returned."
+      consumes: 
+      - "application/json"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: '#/definitions/fhirData'
+securityDefinitions:
+  petstore_auth:
+    type: "oauth2"
+    authorizationUrl: "http://petstore.swagger.io/oauth/dialog"
+    flow: "implicit"
+    scopes:
+      write:pets: "modify pets in your account"
+      read:pets: "read your pets"
+  api_key:
+    type: "apiKey"
+    name: "api_key"
+    in: "header"
+definitions:
+  effectiveDate:
+    type: "object"
+    properties:
+      startDate:
+        type: "string"
+      endDate:
+        type: "string"
+  filterData:
+    type: "object"
+    required:
+    - "effectiveDate"
+    - "entry"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      effectiveDate:
+        $ref: "#/definitions/effectiveDate"
+      entry:
+        $ref: "#/definitions/fhirData"
+  fhirData:
+    type: "object"
+    properties:
+      resourceType:
+        type: "string"
+  listFilterData:
+    type: "object"
+    properties:
+      created:
+        type: "string"
+      count:
+        type: "integer"
+        format: "int64"
+      list:
+        type: "array"
+        items:
+          $ref: '#/definitions/filterData'
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"

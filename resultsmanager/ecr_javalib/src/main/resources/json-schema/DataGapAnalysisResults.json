@@ -1,0 +1,53 @@
+{
+	"$schema": "http://json-schema.org/schema#",
+	"id": "https://git2.icl.gtri.org/projects/CDCSTI/repos/json-schema/DataGapAnalysisResults.json#",
+	"type": "object",
+
+	"status": {
+		"type": "string",
+	},
+	"metrics": {
+		"type": "object",
+		"properties": {
+			"totalgaps": {
+				"type": "integer"
+			},
+			"gapsFixed": {
+				"type": "integer"
+			},
+			"gapsRemaining": {
+				"type": "integer"
+			}
+		}
+	}
+	
+	"result": {
+		"type": "array",
+		"items": {
+			"type":"object",
+			"properties": {
+				"gapId": {
+					"type": "integer"
+				},
+				
+				"FHIRResources": {
+					"type": "array",
+					"items": {
+						"type": "integer"
+					}
+				},
+				
+				"status": {
+					"type": "string",
+					"pattern": "^(?:patched|unpatched|error)$"
+				},
+				
+				"data": {
+					"type": "string"					
+				}
+			}
+		}
+	}
+
+	"default": {}
+}
