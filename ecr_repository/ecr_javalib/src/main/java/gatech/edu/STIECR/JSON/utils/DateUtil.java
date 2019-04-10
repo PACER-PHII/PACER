@@ -13,10 +13,10 @@ public class DateUtil {
 	private static final String birthdayDateFormat = "yyyyMMdd";
 //	private static final String defaultDateTimeFormat = "yyyyMMddhhmmss";
 	private static final String fhirDateTimeFormat = "MMM dd, yyyy h:m:s a";
+	private static final SimpleDateFormat fhirDateTimeFormmater = new SimpleDateFormat(fhirDateTimeFormat);
 	private static final SimpleDateFormat sdFormmatter = new SimpleDateFormat(defaultDateFormat);
 	private static final SimpleDateFormat birthdayFormmatter = new SimpleDateFormat(birthdayDateFormat);
 	private static final DateFormat sdDateTimeFormmatter = DateFormat.getDateTimeInstance();
-	private static final SimpleDateFormat fhirDateTimeFormmater = new SimpleDateFormat(fhirDateTimeFormat);
 	
 	public static Calendar stringToCalendar(String string) throws ParseException {
 		Calendar cal = Calendar.getInstance();

@@ -12,7 +12,7 @@ import gatech.edu.STIECR.DB.model.ECRJob;
 
 @Repository
 public interface ECRDataRepository extends JpaRepository<ECRData, Integer> {
-	List<ECRData> findByEcrIdOrderByVersionDesc(Integer ecrId);
+	List<ECRData> findByEcrIdOrderByVersionDesc(String ecrId);
 	List<ECRData> findByLastNameOrderByVersionDesc(String lastName,Pageable pageable);
 	List<ECRData> findByFirstNameOrderByVersionDesc(String firstName,Pageable pageable);
 	List<ECRData> findByZipCodeOrderByVersionDesc(String zipCode,Pageable pageable);

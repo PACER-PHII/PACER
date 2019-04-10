@@ -542,8 +542,6 @@ public class ControllerUtils {
 			new CodeableConcept("RxNorm", "20 ML Levofloxacin 25 MG/ML Injection", "1665517"),
 			new CodeableConcept("RxNorm", "Levofloxacin 25 MG/ML Injection", "1665518"),
 			new CodeableConcept("RxNorm", "30 ML Levofloxacin 25 MG/ML Injection", "1665519")
-
-			
 	};
 	
 	public static CodeableConcept[][] allCodes = {CT1D,CT1R,CT2L,CT2R,GC1D,GC1R,GC2L};

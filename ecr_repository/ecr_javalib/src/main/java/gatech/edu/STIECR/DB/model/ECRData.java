@@ -75,7 +75,7 @@ public class ECRData {
 				firstName = patientName.getgiven();
 		}
 		zipCode = AddressUtil.findZip(ecr.getPatient().getstreetAddress());
-		diagnosisCode = ecr.getPatient().getDiagnosis().getCode();
+		diagnosisCode = ecr.getPatient().getDiagnosis().get(0).getCode();
 		created_date = new Date();
 		last_updated = new Date();
 	}

@@ -51,7 +51,7 @@ public class Patient {
 	@JsonProperty("Placer_Order_Code")
 	private String placerOrderCode = "";
 	@JsonProperty("Diagnosis")
-	private Diagnosis diagnosis = new Diagnosis();
+	private List<Diagnosis> diagnosis = new ArrayList<Diagnosis>();
 	@JsonProperty("Medication Provided")
 	private List<Medication> medicationProvided = new ArrayList<Medication>();
 	@JsonProperty("Death_Date")
@@ -240,11 +240,11 @@ public class Patient {
 		this.placerOrderCode = placerOrderCode;
 	}
 
-	public Diagnosis getDiagnosis() {
+	public List<Diagnosis> getDiagnosis() {
 		return diagnosis;
 	}
 
-	public void setDiagnosis(Diagnosis diagnosis) {
+	public void setDiagnosis(List<Diagnosis> diagnosis) {
 		this.diagnosis = diagnosis;
 	}
 	
@@ -375,8 +375,10 @@ public class Patient {
 		if(!newPatient.getplacerOrderCode().isEmpty()) {
 			this.placerOrderCode = newPatient.getplacerOrderCode();
 		}
-		if(newPatient.getDiagnosis() != null && (this.diagnosis == null || !newPatient.diagnosis.equals(this.diagnosis))) {
-			this.diagnosis = newPatient.getDiagnosis();
+		for(Diagnosis aDiagnosis : newPatient.getDiagnosis()) {
+			if(!this.diagnosis.contains(aDiagnosis)) {
+				this.diagnosis.add(aDiagnosis);
+			}
 		}
 		for(Medication medication : newPatient.getMedicationProvided()) {
 			if(!this.medicationProvided.contains(medication)) {
