@@ -1,0 +1,63 @@
+version: '3'
+services:
+  cql-execution:
+    build:
+      context: ./cql-execution-service
+    ports:
+      - "8080:8080"
+      
+  cql-storage:
+    depends_on:
+      - db
+    build:
+      context: ./cqlstorage
+    ports:
+      - "8081:8080"
+    environment:
+      JDBC_URL: "jdbc:postgresql://db:5432/db"
+      JDBC_USERNAME: "postgres"
+      JDBC_PASSWORD: "postgres"
+      
+  ecr-repository:
+    build:
+      context: ./ecr_repository
+      
+  db:
+    image: postgres:11.2
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "db"
+      
+  fhir-filter:
+    build:
+      context: ./fhirfilter
+    ports:
+      - "8082:8080"
+    environment:
+      BASIC_AUTH_USER: "fhirFilter"
+      BASIC_AUTH_PASSWORD: "password"
+      
+  list-management-system:
+    depends_on:
+      - db
+    build:
+      context: ./listManagementSystem
+    ports:
+      - "8083:8080"
+    environment:
+      JDBC_URL: "jdbc:postgresql://db:5432/db"
+      JDBC_USERNAME: "postgres"
+      JDBC_PASSWORD: "postgres"
+      
+  results-manager:
+    build:
+      context: ./resultsmanager
+    ports:
+      - "8084:8080"
+      
+  swagger-docs:
+    build:
+      context: ./swaggerdocs
+    ports:
+      - "8085:8080"
