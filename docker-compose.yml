@@ -18,10 +18,6 @@ services:
       JDBC_USERNAME: "postgres"
       JDBC_PASSWORD: "postgres"
       
-  ecr-repository:
-    build:
-      context: ./ecr_repository
-      
   db:
     image: postgres:11.2
     environment:
