@@ -38,7 +38,7 @@ services:
     depends_on:
       - db
     build:
-      context: ./listManagementSystem
+      context: ./jobmanagementsystem
     ports:
       - "8083:8080"
     environment:
@@ -51,7 +51,6 @@ services:
       - job-management-system
       - cql-execution
       - cql-storage
-      - ecr-repository
     build:
       context: ./resultsmanager
     ports:
