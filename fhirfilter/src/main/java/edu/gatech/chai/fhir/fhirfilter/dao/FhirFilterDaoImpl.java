@@ -13,6 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import edu.gatech.chai.fhir.fhirfilter.model.FilterData;
 
 @Component
@@ -45,8 +48,9 @@ public class FhirFilterDaoImpl implements FhirFilterDao {
 		int insertedId = 0;
 		try (Connection conn = this.connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setString(1, filterData.getProfileName());
-			JSONArray jsonArray = new JSONArray(filterData.getEntryToRemove());
-			pstmt.setString(2, jsonArray.toString());
+			ObjectMapper objectMapper = new ObjectMapper();
+			String json = objectMapper.writeValueAsString(filterData.getEntryToRemove());
+			pstmt.setString(2, json);
 
 			if (pstmt.executeUpdate() > 0) {
 				// Retrieves any auto-generated keys created as a result of executing this
@@ -59,6 +63,9 @@ public class FhirFilterDaoImpl implements FhirFilterDao {
 
 			logger.info("New filter data (id=" + insertedId + ") added");
 		} catch (SQLException e) {
+			logger.error(e.getMessage());
+			e.printStackTrace();
+		} catch (JsonProcessingException e) {
 			logger.error(e.getMessage());
 			e.printStackTrace();
 		}
