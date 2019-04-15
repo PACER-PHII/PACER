@@ -19,19 +19,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.constraints.*;
 import javax.validation.Valid;
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 @javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-01-16T14:28:58.456247-05:00[America/New_York]")
 @Controller
@@ -274,7 +267,7 @@ public class ApplyApiController implements ApplyApi {
 					// element.
 					continue;
 				}
-				if (!processJSONArray((JSONArray) resourceObject, (JSONArray) childFilter)) {
+				if (!processJSONArray((JSONArray) resourceObject, (JSONArray) childFilter, replace)) {
 					retv = false;
 				}
 			} else {
@@ -287,7 +280,7 @@ public class ApplyApiController implements ApplyApi {
 		return retv;
 	}
 
-	private boolean processJSONArray(JSONArray resource, JSONArray filter) {
+	private boolean processJSONArray(JSONArray resource, JSONArray filter, boolean replace) {
 		boolean retv = false;
 		for (int i = 0; i < filter.length(); i++) {
 			Object filterJson = filter.get(i);
@@ -301,7 +294,11 @@ public class ApplyApiController implements ApplyApi {
 				if (resourceJson instanceof String && filterJson instanceof String) {
 					// It would not be true as all FHIR list contains another JSON object. But, if
 					// this happens, the FHIR
-					// should have that as well.
+					// should have that as well. And, if FHIR has the value and replace is true, set it now.
+					if (replace == true) {
+						resource.put(i, filterJson); // put i_th value of filter.
+						break;
+					}
 					if (processJSONString(j, resource, (String) resourceJson, (String) filterJson, false)) {
 						match = true;
 						// We found a match. Break out.
@@ -314,13 +311,13 @@ public class ApplyApiController implements ApplyApi {
 						break;
 					}
 				} else if (resourceJson instanceof JSONArray && filterJson instanceof JSONArray) {
-					if (processJSONArray((JSONArray) resourceJson, (JSONArray) filterJson)) {
+					if (processJSONArray((JSONArray) resourceJson, (JSONArray) filterJson, replace)) {
 						match = true;
 						// We found a match. Break out.
 						break;
 					}
 				} else {
-					if (!processJSONValue(j, resource, (Object) resourceJson, (Object) filterJson, false)) {
+					if (!processJSONValue(j, resource, (Object) resourceJson, (Object) filterJson, replace)) {
 						retv = false;
 					}
 				}

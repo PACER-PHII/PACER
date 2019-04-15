@@ -154,12 +154,15 @@ public class FhirFilterDaoImpl implements FhirFilterDao {
 
 		try (Connection conn = this.connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setString(1, filterData.getProfileName());
-			JSONArray jsonArray = new JSONArray(filterData.getEntryToRemove());
-			pstmt.setString(2, jsonArray.toString());
+			ObjectMapper objectMapper = new ObjectMapper();
+			String json = objectMapper.writeValueAsString(filterData.getEntryToRemove());
+			pstmt.setString(2, json);
 			pstmt.setLong(3, filterData.getId());
 			pstmt.executeUpdate();
-			logger.info("filter data (" + filterData.getId() + ") updated with "+jsonArray.toString());
+			logger.info("filter data (" + filterData.getId() + ") updated with "+json);
 		} catch (SQLException e) {
+			System.out.println(e.getMessage());
+		} catch (JsonProcessingException e) {
 			System.out.println(e.getMessage());
 		}
 
