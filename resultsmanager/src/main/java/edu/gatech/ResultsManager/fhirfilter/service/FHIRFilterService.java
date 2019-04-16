@@ -49,7 +49,7 @@ public class FHIRFilterService {
 	 */
 	public String applyFilter(String rawFhir,boolean escaped) {
 		UriComponents uriComponents = UriComponentsBuilder.newInstance()
-				.scheme("https").host(endpoint).port("443").path("/fhirfilter/apply").build();
+				.scheme("http").host(endpoint).port("8080").path("/fhirfilter/apply").build();
 		if(!escaped) { //Trying to prevent double un-escaping here
 			rawFhir = StringEscapeUtils.unescapeJava(rawFhir);
 		}
