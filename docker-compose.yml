@@ -17,7 +17,8 @@ services:
       JDBC_PASSWORD: "postgres"
       
   db:
-    image: postgres:11.2
+    build:
+     context: ./db
     environment:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "postgres"
