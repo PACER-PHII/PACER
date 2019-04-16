@@ -14,7 +14,7 @@ public class JMSUtil {
 			action = new RestAction();
 			action.setName("Post to resultsmanager to update the ECR with FHIR data");
 			action.setCronString("* * 8 * * *");
-			action.addParam("endpoint","http://resultsmanager:8080/ResultsManager/case?identifier=${person.id}&firstName=${person.firstName}&lastName=${person.lastName}&cqlType=${list.jobType}");
+			action.addParam("endpoint","http://results-manager:8080/ResultsManager/case?identifier=${person.id}&firstName=${person.firstName}&lastName=${person.lastName}&cqlType=${list.jobType}");
 			action.addParam("operation","POST");
 			action.addParam("body","");
 			personList.setAction(action);
