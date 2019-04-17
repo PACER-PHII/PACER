@@ -4,7 +4,7 @@ PACER software and deployment instruction
 PACER is a stand-alone deployment service-stack designed to help FHIR Health Record Providers manage access to their data, and facilitate automatic report submission to external sources.
 PACER exists as a set of microservices that live within the same network as the FHIR provider. By managing access to the FHIR server through the PACER microservices, maintainers can provide a stronger level of access and security to their secure data sources.
 The system has 2 major configurable feature points: a Clinical Query Language (CQL) library for crafting patient context, and fhir-filter library for restricting access to certain resources and data, for the purpose of securing Personally Indentifying Information. Both libraries can be configured at boot-up and run-time, and will be explained in detail in their subsequent wiki sections. Please refer to the wiki for more detailed explanations on their components at https://github.com/gt-health/PACER/wiki
-Software requirements
+## Software requirements
 * Docker-CE (Community Edition). Refer to https://docs.docker.com/install/ for installation instructions
 * Docker-Compose, version 1.3 or later. Refer to https://docs.docker.com/compose/install/ for installation instructions.
 
