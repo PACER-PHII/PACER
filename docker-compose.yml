@@ -52,12 +52,14 @@ services:
       - cql-storage
     build:
       context: ./resultsmanager
-    environment:
-      CQL_EXECUTION_URL: "cql-execution"
-      CQL_EXECUTION_TERMINOLOGY_SERVICE: "https://cts.nlm.nih.gov/fhir/"
-      #Change to fhir data provider within EHR
+    environment
+      #Change to fhir data provider within the internal EHR
       CQL_EXECUTION_DATA_SERVICE: "https://apps.hdap.gatech.edu/gt-fhir/fhir/"
+      #Change if you want to use a seperate terminology service
+      CQL_EXECUTION_TERMINOLOGY_SERVICE: "https://cts.nlm.nih.gov/fhir/"
+      #Authorization credentials to the terminology service
       CQL_EXECUTION_TERMINOLOGY_USER: "jduke99"
       CQL_EXECUTION_TERMINOLOGY_PASS: "v6R4*SsU39"
+      CQL_EXECUTION_URL: "cql-execution"
       CQL_STORAGE_URL: "cql-storage"
       FHIR_FILTER_URL: "fhir-filter"
