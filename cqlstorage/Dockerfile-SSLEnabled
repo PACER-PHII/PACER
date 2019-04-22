@@ -14,3 +14,4 @@ WORKDIR /usr/src/app
 EXPOSE 8080
 #CMD ["tail", "-f", "/dev/nulljava"]
 CMD ["java", "-jar", "/usr/src/app/CQLStorage.jar"]
+EXPOSE 8443

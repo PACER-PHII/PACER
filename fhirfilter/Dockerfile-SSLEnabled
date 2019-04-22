@@ -14,6 +14,6 @@ COPY --from=builder /usr/src/cql_src/mycertificate.pem /root/
 COPY --from=builder /usr/src/cql_src/mycertificatekeyfile.pem /root/
 COPY --from=builder /usr/src/cql_src/server-ssl-enabled.xml $CATALINA_HOME/conf/server.xml
 COPY --from=builder /usr/src/app/target/fhirfilter.jar fhirfilter.jar
-EXPOSE 8080
 
 ENTRYPOINT ["java","-jar","/fhirfilter.jar"]
+EXPOSE 8443

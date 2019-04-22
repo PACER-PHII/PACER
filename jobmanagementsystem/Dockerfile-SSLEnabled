@@ -11,4 +11,4 @@ COPY --from=builder /usr/src/app/mycertificate.pem /root/
 COPY --from=builder /usr/src/app/mycertificatekeyfile.pem /root/
 COPY --from=builder /usr/src/app/server-ssl-enabled.xml $CATALINA_HOME/conf/server.xml
 COPY --from=builder /usr/src/app/target/JobManagementSystem-0.0.1-SNAPSHOT.war $CATALINA_HOME/webapps/JobManagementSystem.war
-EXPOSE 8080
+EXPOSE 8443
