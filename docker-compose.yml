@@ -8,9 +8,9 @@ services:
     depends_on:
       - db
     build:
-      context: ./cqlstorage
+      context: ./cqlstorage/Dockerfile-SSLenabled
     ports:
-      - "8080:8080"
+      - "8443:8443"
     environment:
       JDBC_URL: "jdbc:postgresql://db:5432/db"
       JDBC_USERNAME: "postgres"
@@ -26,9 +26,9 @@ services:
       
   fhir-filter:
     build:
-      context: ./fhirfilter
+      context: ./fhirfilter/Dockerfile-SSLenabled
     ports:
-      - "8081:8080"
+      - "8444:8443"
     environment:
       BASIC_AUTH_USER: "fhirFilter"
       BASIC_AUTH_PASSWORD: "password"
@@ -37,9 +37,9 @@ services:
     depends_on:
       - db
     build:
-      context: ./jobmanagementsystem
+      context: ./jobmanagementsystem/Dockerfile-SSLenabled
     ports:
-      - "8082:8080"
+      - "8445:8443"
     environment:
       JDBC_URL: "jdbc:postgresql://db:5432/db"
       JDBC_USER: "postgres"
