@@ -58,8 +58,8 @@ services:
       #Change if you want to use a seperate terminology service
       CQL_EXECUTION_TERMINOLOGY_SERVICE: "https://cts.nlm.nih.gov/fhir/"
       #Authorization credentials to the terminology service
-      CQL_EXECUTION_TERMINOLOGY_USER: "jduke99"
-      CQL_EXECUTION_TERMINOLOGY_PASS: "v6R4*SsU39"
+      CQL_EXECUTION_TERMINOLOGY_USER: "****"
+      CQL_EXECUTION_TERMINOLOGY_PASS: "****"
       CQL_EXECUTION_URL: "cql-execution"
       CQL_STORAGE_URL: "cql-storage"
       FHIR_FILTER_URL: "fhir-filter"
