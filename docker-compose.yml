@@ -52,7 +52,7 @@ services:
       - cql-storage
     build:
       context: ./resultsmanager
-    environment
+    environment:
       #Change to fhir data provider within the internal EHR
       CQL_EXECUTION_DATA_SERVICE: "https://apps.hdap.gatech.edu/gt-fhir/fhir/"
       #Change if you want to use a seperate terminology service
