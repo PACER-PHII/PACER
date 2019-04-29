@@ -55,11 +55,14 @@ services:
     environment:
       #Change to fhir data provider within the internal EHR
       CQL_EXECUTION_DATA_SERVICE: "https://apps.hdap.gatech.edu/gt-fhir/fhir/"
+      #Basic authentication credentials to the data service
+      CQL_EXECUTION_DATA_USER: ""
+      CQL_EXECUTION_DATA_PASS: ""
       #Change if you want to use a seperate terminology service
       CQL_EXECUTION_TERMINOLOGY_SERVICE: "https://cts.nlm.nih.gov/fhir/"
       #Authorization credentials to the terminology service
-      CQL_EXECUTION_TERMINOLOGY_USER: "****"
-      CQL_EXECUTION_TERMINOLOGY_PASS: "****"
+      CQL_EXECUTION_TERMINOLOGY_USER: ""
+      CQL_EXECUTION_TERMINOLOGY_PASS: ""
       CQL_EXECUTION_URL: "cql-execution"
       CQL_STORAGE_URL: "cql-storage"
       FHIR_FILTER_URL: "fhir-filter"
