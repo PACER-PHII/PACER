@@ -2,6 +2,8 @@ package org.opencds.cqf.cql.data.fhir;
 
 import ca.uhn.fhir.context.*;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
+
 import org.hl7.fhir.dstu3.model.Base;
 import org.hl7.fhir.dstu3.model.Quantity;
 import org.hl7.fhir.exceptions.FHIRException;
@@ -12,6 +14,7 @@ import org.opencds.cqf.cql.runtime.DateTime;
 import org.opencds.cqf.cql.runtime.Interval;
 import org.opencds.cqf.cql.runtime.Precision;
 import org.opencds.cqf.cql.terminology.TerminologyProvider;
+import org.opencds.cqf.cql.terminology.fhir.FhirTerminologyProvider;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -54,6 +57,10 @@ public abstract class BaseFhirDataProvider implements DataProvider {
     public BaseFhirDataProvider setEndpoint(String endpoint){
         this.endpoint = endpoint;
         this.fhirClient = getFhirContext().newRestfulGenericClient(endpoint);
+        if (userName != null && password != null) {
+            BasicAuthInterceptor basicAuth = new BasicAuthInterceptor(userName, password);
+            fhirClient.registerInterceptor(basicAuth);
+        }
         return this;
     }
 
@@ -62,6 +69,12 @@ public abstract class BaseFhirDataProvider implements DataProvider {
     }
     public BaseFhirDataProvider setTerminologyProvider(TerminologyProvider terminologyProvider) {
         this.terminologyProvider = terminologyProvider;
+        return this;
+    }
+    
+    public BaseFhirDataProvider withBasicAuth(String userName, String password) {
+        this.userName = userName;
+        this.password = password;
         return this;
     }
 
@@ -84,6 +97,23 @@ public abstract class BaseFhirDataProvider implements DataProvider {
 
     public IGenericClient getFhirClient() {
         return fhirClient;
+    }
+    
+ // TODO: Obviously don't want to do this, just a quick-fix for now
+    private String userName;
+    public String getUserName() {
+        return userName;
+    }
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    private String password;
+    public String getPassword() {
+        return password;
+    }
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     // Transformations
