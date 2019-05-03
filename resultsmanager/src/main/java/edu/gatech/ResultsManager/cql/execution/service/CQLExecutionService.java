@@ -34,6 +34,8 @@ public class CQLExecutionService {
 	private String dataServiceUri;
 	private String terminologyUser;
 	private String terminologyPass;
+	private String dataUser;
+	private String dataPass;
 	private RestTemplate restTemplate;
 	private ObjectMapper objectMapper;
 	private ObjectNode requestJson;
@@ -54,6 +56,8 @@ public class CQLExecutionService {
 		requestJson.put("dataServiceUri", dataServiceUri);
 		requestJson.put("terminologyUser", terminologyUser);
 		requestJson.put("terminologyPass", terminologyPass);
+		requestJson.put("dataUser", dataUser);
+		requestJson.put("dataPass", dataPass);
 		requestJson.put("code", cqlBody);
 		requestJson.put("patientId", patientId);
 		HttpEntity<String> entity = new HttpEntity<String>(requestJson.toString(), headers);
@@ -106,6 +110,21 @@ public class CQLExecutionService {
 	public void setTerminologyPass(String terminologyPass) {
 		this.terminologyPass = terminologyPass;
 	}
-	
+
+	public String getDataUser() {
+		return dataUser;
+	}
+
+	public void setDataUser(String dataUser) {
+		this.dataUser = dataUser;
+	}
+
+	public String getDataPass() {
+		return dataPass;
+	}
+
+	public void setDataPass(String dataPass) {
+		this.dataPass = dataPass;
+	}
 	
 }

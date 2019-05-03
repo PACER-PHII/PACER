@@ -8,7 +8,10 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.model.base.composite.BaseIdentifierDt;
+import ca.uhn.fhir.model.dstu2.composite.IdentifierDt;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
 
 @Service
@@ -17,6 +20,8 @@ import ca.uhn.fhir.rest.gclient.TokenClientParam;
 @Primary
 public class PatientIdentifierService {
 	private String dataServiceUri;
+	private String dataUser;
+	private String dataPass;
 	private IGenericClient client;
 	private FhirContext ctx;
 	public PatientIdentifierService() {
@@ -25,10 +30,14 @@ public class PatientIdentifierService {
 	
 	public String getFhirIdByIdentifier(String identifier) throws Exception {
 		client = ctx.newRestfulGenericClient(dataServiceUri);
+		BaseIdentifierDt identifierObject = createIDFromString(identifier);
+		if(dataUser != null && !dataUser.isEmpty() && dataPass != null && !dataPass.isEmpty()) {
+			client.registerInterceptor(new BasicAuthInterceptor(dataUser,dataPass));
+		}
 		Bundle results = client
 				.search()
 				.forResource(Patient.class)
-				.where(new TokenClientParam("identifier").exactly().code(identifier))
+				.where(new TokenClientParam("identifier").exactly().identifier(identifierObject))
 				.returnBundle(Bundle.class)
 				.execute();
 		if(!results.hasEntry())
@@ -44,5 +53,27 @@ public class PatientIdentifierService {
 	public void setDataServiceUri(String dataServiceUri) {
 		this.dataServiceUri = dataServiceUri;
 	}
+
+	public String getDataUser() {
+		return dataUser;
+	}
+
+	public void setDataUser(String dataUser) {
+		this.dataUser = dataUser;
+	}
+
+	public String getDataPass() {
+		return dataPass;
+	}
+
+	public void setDataPass(String dataPass) {
+		this.dataPass = dataPass;
+	}
 	
+	public BaseIdentifierDt createIDFromString(String input) {
+		String code = input.substring(0, input.charAt('|'));
+		String system = input.substring(input.charAt('|') + 1);
+		BaseIdentifierDt identifier = new IdentifierDt(system,code);
+		return identifier;
+	}
 }
