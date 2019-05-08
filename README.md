@@ -12,6 +12,7 @@ Software requirements
 Before installing PACER you need to configure a few entries in order to point PACER to your data sources.
 In the ```docker-compose.yml``` file...
 * Update the ```CQL_EXECUTION_DATA_SERVICE``` to point to your base FHIR URL.
+* If your FHIR Service uses authentication, update the ```CQL_EXECUTION_DATA_USER``` and ```CQL_EXECUTION_DATA_USER``` to the basic authentication credentials you would like to use.
 * If you have a FHIR terminology service, or if you rown FHIR server acts as a terminology service, update the ```CQL_EXECUTION_TERMINOLOGY_SERVICE``` to a different base FHIR URL.
 * Additionally, if you choose to use a seperate terminology service, you must either update or remove the ```CQL_EXECUTION_TERMINOLOGY_USER``` and ```CQL_EXECUTION_TERMINOLOGY_PASS``` credentials
 ## Installation Instructions
