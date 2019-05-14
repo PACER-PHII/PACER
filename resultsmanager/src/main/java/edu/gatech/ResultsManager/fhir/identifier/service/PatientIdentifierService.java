@@ -71,8 +71,8 @@ public class PatientIdentifierService {
 	}
 	
 	public BaseIdentifierDt createIDFromString(String input) {
-		String code = input.substring(0, input.charAt('|'));
-		String system = input.substring(input.charAt('|') + 1);
+		String code = input.substring(0, input.indexOf('|'));
+		String system = input.substring(input.indexOf('|') + 1);
 		BaseIdentifierDt identifier = new IdentifierDt(system,code);
 		return identifier;
 	}

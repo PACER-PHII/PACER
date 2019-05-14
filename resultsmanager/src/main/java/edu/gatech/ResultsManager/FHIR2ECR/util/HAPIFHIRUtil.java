@@ -4,30 +4,27 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
 
+import org.hl7.fhir.dstu3.model.Address;
+import org.hl7.fhir.dstu3.model.Age;
 import org.hl7.fhir.dstu3.model.DateTimeType;
+import org.hl7.fhir.dstu3.model.Period;
+import org.hl7.fhir.dstu3.model.StringType;
 
 import ca.uhn.fhir.model.api.IDatatype;
-import ca.uhn.fhir.model.dstu2.composite.AddressDt;
-import ca.uhn.fhir.model.dstu2.composite.AgeDt;
-import ca.uhn.fhir.model.dstu2.composite.PeriodDt;
-import ca.uhn.fhir.model.dstu2.composite.RangeDt;
 import ca.uhn.fhir.model.primitive.DateTimeDt;
 import ca.uhn.fhir.model.primitive.StringDt;
 
 public class HAPIFHIRUtil {
 	//DSTU2
 	public static Date getDate(IDatatype data) {
-		if(data instanceof DateTimeDt) {
-			return getDate((DateTimeDt)data);
+		if(data instanceof DateTimeType) {
+			return getDate((DateTimeType)data);
 		}
-		if(data instanceof AgeDt) {
-			return getDate((AgeDt)data);
+		if(data instanceof Age) {
+			return getDate((Age)data);
 		}
-		if(data instanceof PeriodDt) {
-			return getDate((PeriodDt)data);
-		}
-		if(data instanceof RangeDt) {
-			return getDate((RangeDt)data);
+		if(data instanceof Period) {
+			return getDate((Period)data);
 		}
 		if(data instanceof StringDt) {
 			return getDate((StringDt)data);
@@ -38,14 +35,11 @@ public class HAPIFHIRUtil {
 	public static Date getDate(DateTimeDt dateTime) {
 		return dateTime.getValue();
 	}
-	public static Date getDate(AgeDt age) {
+	public static Date getDate(Age age) {
 		return null;
 	}
-	public static Date getDate(PeriodDt period) {
+	public static Date getDate(Period period) {
 		return period.getStart();
-	}
-	public static Date getDate(RangeDt range) {
-		return null;
 	}
 	public static Date getDate(StringDt string) {
 		try {
@@ -61,9 +55,9 @@ public class HAPIFHIRUtil {
 		return new Date(dateTimeType.getValue().getTime());
 	}
 	
-	public static String addressToString(AddressDt address) {
+	public static String addressToString(Address address) {
 		String returnString = "";
-		for(StringDt line: address.getLine()) {
+		for(StringType line: address.getLine()) {
 			returnString.concat(line.getValue());
 			returnString.concat(" ");
 		}
@@ -75,8 +69,8 @@ public class HAPIFHIRUtil {
 		return returnString;
 	}
 	
-	public static AddressDt stringToAddress(String string) {
-		AddressDt returnAddress = new AddressDt();
+	public static Address stringToAddress(String string) {
+		Address returnAddress = new Address();
 		int lineEndIndex = string.indexOf(", ");
 		returnAddress.addLine(string.substring(0, lineEndIndex));
 		string = string.substring(lineEndIndex+2);

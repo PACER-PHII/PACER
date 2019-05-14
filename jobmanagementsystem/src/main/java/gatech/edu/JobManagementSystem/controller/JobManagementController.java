@@ -48,6 +48,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import gatech.edu.JobManagementSystem.model.Action;
 import gatech.edu.JobManagementSystem.model.ActionType;
 import gatech.edu.JobManagementSystem.model.ListRunType;
+import gatech.edu.JobManagementSystem.model.ListType;
 import gatech.edu.JobManagementSystem.model.Person;
 import gatech.edu.JobManagementSystem.model.PersonList;
 import gatech.edu.JobManagementSystem.model.ProcessImpl.RestAction;
@@ -86,7 +87,7 @@ public class JobManagementController {
 		}
 		log.debug("action:"+action.toString());
 		if(action != null) {
-			if(action.getCronString() != null) {
+			if(action.getCronString() != null && list.getListType() != ListType.SINGLE_USE) {
 				log.debug("scheduling action:"+action.toString());
 				taskScheduler.schedule(action, new CronTrigger(action.getCronString()));
 			}
