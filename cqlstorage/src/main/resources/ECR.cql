@@ -1,1 +1,59 @@
-library Retrieve2 version '1.0'  using FHIR version '3.0.0'  include FHIRHelpers version '3.0.0' called FHIRHelpers  codesystem "SNOMED": 'http://snomed.info/sct'  codesystem "ICD9PROC": 'http://hl7.org/fhir/sid/icd-9-proc'  codesystem "LOINC": 'http://loinc.org'  codesystem "CPT": 'http://www.ama-assn.org/go/cpt'  codesystem "RxNorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'  codesystem "ISBT": 'urn:oid:2.16.840.1.113883.6.18'  valueset "Chlamydia": '2.16.840.1.113883.3.464.1003.112.12.1003'  define "ISBTCodes": Concept { Code 'E0316' from "ISBT" }  define "Transfusion Procedures": Concept { Code '99.04' from "ICD9PROC", Code '99.05' from "ICD9PROC" }  define "Pregnancy Diagnoses": Concept { Code '35633007' from "SNOMED", Code '42343007' from "SNOMED" }  define "Anemia": Concept { Code '267530009' from "SNOMED" }  define "Pulse Oximetry": Concept { Code '2710-2' from "LOINC", Code '59408-5' from "LOINC" }  define "Relevant Labs": Concept { Code '5902-2' from "LOINC", Code '4544-3' from "LOINC" }  define "Chest XRay": Concept { Code '71010' from "CPT", Code '71020' from "CPT", Code '71045' from "CPT" }  define "Furosemide": Concept { Code '282452' from "RxNorm" }  context Patient  define "primarysourcereaction": 'Transfusion-related circulatory overload' define "reactionmeddrallt": '10066174' define "reactionmeddrapt": '10066174'  define "Pt":    [Patient] Pt  define "Chlamydia Diagnosis":     [Condition:"Chlamydia"]  define "19.Patient.ID":  "Pt".identifier[0].value  define "20A.Patient.Name.given":  "Pt".name[0].given[0]  define "20B.Patient.Name.family":     "Pt".name[0].family  /* define "21-22-23.Patient.Parents_Guardians":  [RelatedPersons] */  define "24.Patient.Street_Address":   "Pt".address[0]  define "24.Patient.Birth_Date":   "Pt".birthDate[0].value  define "26.Patient.Sex":  "Pt".gender[0].value  define "27.Patient.Class":  'TBD'  define "28.Patient.Race": 'TBD'  define "29.Patient.Ethnicity": 'TBD'  define "30.Patient.Preferred_Language": "Pt".communication.language PtLang   /* such that PtLang.preferred=true*/  define "31.Patient.Occupation": 'TBD'  define "32.Patient.Pregnancy": 'TBD'  define "33.Patient.Travel_History": 'TBD'  define "EventIndexDateTime":   [Condition:"Chlamydia"] ChlamydiaDx   return ChlamydiaDx.onset.start  define "B5.MedDRAHeader.1": 'The patient developed Transfusion Associated Cardiac Overload (MedDRA 10066174)'  define "B5.ExposureHeader.2": 'The patient received the following blood product:'  /* define "Blood Transfusion Procedure":   [Procedure: Code in "Transfusion Procedures"] Transfusions   return Transfusions.performed */    define "TransfusionEvent":     [DeviceUseStatement] BloodProduct     return BloodProduct  define "Tranfusion Risk Window":     Interval["EventIndexDateTime","EventIndexDateTime" + 24 hours]  define "B5.DiagnosesHeader.3": 'The patient had the following relevant data within 24 hours following the transfusion:'  define "B5.Diagnoses.TACO.4": [Condition: Code in "Chlamydia"] Dx     with "Tranfusion Risk Window" P     such that Dx.onset during day of P   return Dx  define "B5.Procedures.CXR.4": [Procedure: Code in "Chest XRay"] CXR with "Tranfusion Risk Window" P such that CXR.performed during day of P  define "B5.Medications.Lasix.4": [MedicationStatement: Code in "Furosemide"] Lasix with "Tranfusion Risk Window" P such that Lasix.effective.start during day of P   define "B5.Observations.SpO2.4": [Observation: Code in "Pulse Oximetry"] SpO2 with "Tranfusion Risk Window" P such that SpO2.effective during day of P  define "B7.RelatedMedicalHistory.1": 'The patient had the following relevant medical history:'  define "B7.Diagnoses.Anemia.2": [Condition: Code in "Anemia"] Dx   return Dx
+library ChlamydiaECR version '1.0'
+using FHIR version '3.0.0'
+include FHIRHelpers version '3.0.0' called FHIRHelpers
+codesystem "SNOMED": 'http://snomed.info/sct'
+codesystem "ICD9PROC": 'http://hl7.org/fhir/sid/icd-9-proc'
+codesystem "LOINC": 'http://loinc.org'
+codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
+codesystem "RxNorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'
+
+valueset "Chlamydia_Codes": '2.16.840.1.113883.3.464.1003.112.12.1003'
+valueset "Immunization_Codes": '2.16.840.1.113762.1.4.1010.8'
+valueset "Macrolides": '2.16.840.1.113883.3.666.5.772'
+valueset "Levofloxacin": '2.16.840.1.113762.1.4.1032.69'
+valueset "Doxycycline": '2.16.840.1.113762.1.4.1032.66'
+
+define "Pregnancy Diagnoses": Concept { Code '35633007' from "SNOMED", Code '42343007' from "SNOMED" }
+
+define "Chlamydia Symptoms": Concept { Code '49650001' from "SNOMED", Code '2910007' from "SNOMED" }
+
+define "Anemia": Concept { Code '267530009' from "SNOMED" }
+define "Furosemide": Concept { Code '282452' from "RxNorm" }
+
+context Patient
+
+define "myFeature": 'myText'
+define "Pt": [Patient] Pt
+define "Chlamydia Diagnosis": [Condition:"Chlamydia_Codes"]
+define "19.Patient.ID": "Pt".identifier[0].value
+define "20A.Patient.Name.given": "Pt".name[0].given[0]
+define "20B.Patient.Name.family": "Pt".name[0].family
+/*define "21.ParentGuardian.Name: 'TBD'
+define "22.ParentGuardian.Phone: 'TBD'
+define "23.ParentGuardian.Address”: 'TBD'*/
+define "24.Patient.Street_Address": "Pt".address[0]
+define "25.Patient.Birth_Date":   "Pt".birthDate[0].value
+define "26.Patient.Sex": "Pt".gender[0].value
+/*define "27.Patient.Class": 'TBD'
+define "28.Patient.Race": 'TBD'
+define "29.Patient.Ethnicity":	'TBD'*/
+define "30.Patient.Preferred_Language":  "Pt".communication.language
+define "31.Patient.Occupation": 'TBD'
+define "32.Patient.Pregnancy": 'TBD'
+define "33.Patient.Travel_History": 'TBD'
+define "34.Patient.Insurance_Type": 'TBD'
+define "35.Immunization.Immunization_History": [Immunization] Immunes return Immunes
+
+define "38.Condition.Date_Of_Onset": "Chlamydia Diagnosis".onset
+define "39.Observation.Symptoms": [Condition:"Chlamydia Symptoms"]
+define "40.Lab?.LabOrderCode": 'TBD'
+define "41.Provider.Placer_Order_Number": 'TBD'
+define "42.Condition.Diagnosis": "Chlamydia Diagnosis"
+define "AllEncounters": [Encounter] Encounters
+define "FirstEncounter": First("AllEncounters" AllEns)
+define "LastEncounter": Last("AllEncounters" AllEns)
+define "43.Encounters.Date_Of_Diagnosis": "FirstEncounter".period.start
+define "44.Medication_Request.MedicationProvided.1": [MedicationRequest:"Macrolides"]
+define "44.Medication_Request.MedicationProvided.2": [MedicationRequest:"Levofloxacin"]
+define "44.Medication_Request.MedicationProvided.3": [MedicationRequest:"Doxycycline"]
+define "45.Patient.Death_Date": "Pt".deceased define "46.Encounter.Date_Discharged": "LastEncounter".period.end define "48.Condition.Trigger_Code": "Chlamydia Diagnosis".code
