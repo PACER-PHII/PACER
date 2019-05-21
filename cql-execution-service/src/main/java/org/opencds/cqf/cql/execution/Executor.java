@@ -40,6 +40,7 @@ import org.opencds.cqf.cql.terminology.fhir.FhirTerminologyProvider;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.EncodingEnum;
 import ca.uhn.fhir.rest.client.api.ServerValidationModeEnum;
+import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
 
 /**
  * Created by Christopher on 1/13/2017.
@@ -91,8 +92,11 @@ public class Executor {
 
         String defaultEndpoint = "http://measure.eval.kanvix.com/cqf-ruler/baseDstu3";
 
-        BaseFhirDataProvider provider = new FhirDataProviderStu3()
-                .setEndpoint(dataPvdrURL == null ? defaultEndpoint : dataPvdrURL);
+        BaseFhirDataProvider provider = new FhirDataProviderStu3();
+        if(dataUser != null && !dataUser.isEmpty() && dataPass != null && !dataPass.isEmpty()) {
+        	provider = provider.withBasicAuth(dataUser,dataPass);
+        }
+        provider.setEndpoint(dataPvdrURL == null ? defaultEndpoint : dataPvdrURL);
         FhirContext fhirContext = provider.getFhirContext();
         fhirContext.getRestfulClientFactory().setServerValidationMode(ServerValidationModeEnum.NEVER);
         provider.setFhirContext(fhirContext);
