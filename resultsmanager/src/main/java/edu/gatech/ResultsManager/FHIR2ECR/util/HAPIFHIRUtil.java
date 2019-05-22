@@ -88,7 +88,13 @@ public class HAPIFHIRUtil {
 	
 	public static Date getDateFromCQLDateTimeString(String input) throws ParseException {
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
-		String lintedInput = input.substring(input.lastIndexOf('[') + 1, input.indexOf(']'));
+		String lintedInput = "";
+		if(input.lastIndexOf('[') != -1 && input.indexOf(']') != -1) {
+			lintedInput = input.substring(input.lastIndexOf('[') + 1, input.indexOf(']'));
+		}
+		else {
+			lintedInput = input;
+		}
 		return format.parse(lintedInput);
 	}
 }
