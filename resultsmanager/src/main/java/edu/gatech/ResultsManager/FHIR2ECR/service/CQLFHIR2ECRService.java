@@ -147,6 +147,10 @@ public class CQLFHIR2ECRService {
 				case "StringType":
 					addStringResultByResultKey(ecr,result);
 					break;
+				case "DateTimeType":
+				case "DateTime":
+					addDateTimeResultByResultKey(ecr,result);
+					break;
 				}
 			}
 		}
@@ -769,6 +773,25 @@ public class CQLFHIR2ECRService {
 		default:
 			log.debug("STRING --- Didn't match to any key!");
 			break;
+		}
+	}
+	
+	public void addDateTimeResultByResultKey(ECR ecr,JsonNode result) {
+		Date value = null;
+		try {
+			value = HAPIFHIRUtil.getDateFromCQLDateTimeString(result.get("result").asText());
+		} catch (ParseException e) {
+			log.error("Couldn't format datetime:"+result.get("result").asText());
+			return;
+		}
+		String key = result.get("name").asText();
+		switch(key) {
+			case "43.Encounters.Date_Of_Diagnosis":
+				ecr.getPatient().setdateOfOnset(value.toString());
+			case "45.Patient.Death_Date":
+				ecr.getPatient().setdeathDate(value.toString());
+			case "46.Patient.Date_Discharged":
+				ecr.getPatient().setdateDischarged(value.toString());
 		}
 	}
 	

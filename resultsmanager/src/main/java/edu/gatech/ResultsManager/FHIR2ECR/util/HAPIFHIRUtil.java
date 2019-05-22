@@ -2,6 +2,8 @@ package edu.gatech.ResultsManager.FHIR2ECR.util;
 
 import java.text.DateFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 import org.hl7.fhir.dstu3.model.Address;
@@ -15,7 +17,7 @@ import ca.uhn.fhir.model.primitive.DateTimeDt;
 import ca.uhn.fhir.model.primitive.StringDt;
 
 public class HAPIFHIRUtil {
-	//DSTU2
+	//DSTU3
 	public static Date getDate(IDatatype data) {
 		if(data instanceof DateTimeType) {
 			return getDate((DateTimeType)data);
@@ -49,7 +51,6 @@ public class HAPIFHIRUtil {
 		}
 	}
 	
-	//STU3
 	
 	public static Date getDate(DateTimeType dateTimeType) {
 		return new Date(dateTimeType.getValue().getTime());
@@ -83,5 +84,11 @@ public class HAPIFHIRUtil {
 	
 	public static String getIdFromFullURL(String URL) {
 		return URL.substring(URL.lastIndexOf('/') + 1);
+	}
+	
+	public static Date getDateFromCQLDateTimeString(String input) throws ParseException {
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
+		String lintedInput = input.substring(input.lastIndexOf('[') + 1, input.indexOf(']'));
+		return format.parse(lintedInput);
 	}
 }
