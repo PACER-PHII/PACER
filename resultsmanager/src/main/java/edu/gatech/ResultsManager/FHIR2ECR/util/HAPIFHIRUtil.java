@@ -87,7 +87,8 @@ public class HAPIFHIRUtil {
 	}
 	
 	public static Date getDateFromCQLDateTimeString(String input) throws ParseException {
-		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
+		SimpleDateFormat timeZoneFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
+		SimpleDateFormat noTimeZoneformat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 		String lintedInput = "";
 		if(input.lastIndexOf('[') != -1 && input.indexOf(']') != -1) {
 			lintedInput = input.substring(input.lastIndexOf('[') + 1, input.indexOf(']'));
@@ -95,6 +96,10 @@ public class HAPIFHIRUtil {
 		else {
 			lintedInput = input;
 		}
-		return format.parse(lintedInput);
+		try {
+			return timeZoneFormat.parse(lintedInput);
+		}
+		catch(ParseException e) {}
+		return noTimeZoneformat.parse(lintedInput);
 	}
 }
