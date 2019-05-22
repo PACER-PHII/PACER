@@ -44,16 +44,18 @@ define "33.Patient.Travel_History": 'TBD'
 define "34.Patient.Insurance_Type": 'TBD'
 define "35.Immunization.Immunization_History": [Immunization] Immunes return Immunes
 
-define "38.Condition.Date_Of_Onset": "Chlamydia Diagnosis".onset
-define "39.Observation.Symptoms": [Condition:"Chlamydia Symptoms"]
+define "38.Condition.Date_Of_Onset": "Chlamydia Diagnosis".onset.value
+define "39.Observation.Symptoms": [Condition: Code in "Chlamydia Symptoms"]
 define "40.Lab?.LabOrderCode": 'TBD'
 define "41.Provider.Placer_Order_Number": 'TBD'
 define "42.Condition.Diagnosis": "Chlamydia Diagnosis"
 define "AllEncounters": [Encounter] Encounters
 define "FirstEncounter": First("AllEncounters" AllEns)
 define "LastEncounter": Last("AllEncounters" AllEns)
-define "43.Encounters.Date_Of_Diagnosis": "FirstEncounter".period.start
+define "43.Encounters.Date_Of_Diagnosis": "FirstEncounter".period.start.value
 define "44.Medication_Request.MedicationProvided.1": [MedicationRequest:"Macrolides"]
 define "44.Medication_Request.MedicationProvided.2": [MedicationRequest:"Levofloxacin"]
 define "44.Medication_Request.MedicationProvided.3": [MedicationRequest:"Doxycycline"]
-define "45.Patient.Death_Date": "Pt".deceased define "46.Encounter.Date_Discharged": "LastEncounter".period.end define "48.Condition.Trigger_Code": "Chlamydia Diagnosis".code
+define "45.Patient.Death_Date": "Pt".deceased
+define "46.Encounter.Date_Discharged": "LastEncounter".period.end.value
+define "48.Condition.Trigger_Code": "Chlamydia Diagnosis".code
