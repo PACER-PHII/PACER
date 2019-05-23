@@ -106,7 +106,7 @@ public class CQLFHIR2ECRService {
 						filteredResults = fhirFilterService.applyFilter(result.get("result"),false);
 						Condition condition = (Condition)parser3.parseResource(filteredResults);
 						if(result.get("name").asText().equals("42.Condition.Diagnosis")) {
-							addDiagnosis(condition);
+							addDiagnosis(ecr,condition);
 						}
 						handleCondition(ecr,condition);
 						break;
