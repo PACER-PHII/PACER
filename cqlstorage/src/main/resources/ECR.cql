@@ -13,6 +13,8 @@ valueset "Macrolides": '2.16.840.1.113883.3.666.5.772'
 valueset "Levofloxacin": '2.16.840.1.113762.1.4.1032.69'
 valueset "Doxycycline": '2.16.840.1.113762.1.4.1032.66'
 
+/*valueset "Chlamydia Labs": "1.2.3.4.5.6.7.8.9.0"*/
+
 define "Pregnancy Diagnoses": Concept { Code '35633007' from "SNOMED", Code '42343007' from "SNOMED" }
 
 define "Chlamydia Symptoms": Concept { Code '49650001' from "SNOMED", Code '2910007' from "SNOMED" }
@@ -43,19 +45,19 @@ define "32.Patient.Pregnancy": 'TBD'
 define "33.Patient.Travel_History": 'TBD'
 define "34.Patient.Insurance_Type": 'TBD'
 define "35.Immunization.Immunization_History": [Immunization] Immunes return Immunes
-
+/* define "36.Parameter.Lab_Test_Date": "TBD"
+define "37.Encounter.Date_Admitted": "TBD */
 define "38.Condition.Date_Of_Onset": "Chlamydia Diagnosis".onset.value
 define "39.Observation.Symptoms": [Condition: Code in "Chlamydia Symptoms"]
 define "40.Lab?.LabOrderCode": 'TBD'
 define "41.Provider.Placer_Order_Number": 'TBD'
 define "42.Condition.Diagnosis": "Chlamydia Diagnosis"
-define "AllEncounters": [Encounter] Encounters
-define "FirstEncounter": First("AllEncounters" AllEns)
-define "LastEncounter": Last("AllEncounters" AllEns)
-define "43.Encounters.Date_Of_Diagnosis": "FirstEncounter".period.start.value
+/*define "LinkedEncounter" [Encounter] encounters with "Chlamyida Diagnosis" such that "chlamydia Diagnosis".encounter._id is encounters._id*/
+define "43.Condition.Date_Of_Diagnosis": "38.Condition.Date_Of_Onset"
 define "44.Medication_Request.MedicationProvided.1": [MedicationRequest:"Macrolides"]
 define "44.Medication_Request.MedicationProvided.2": [MedicationRequest:"Levofloxacin"]
 define "44.Medication_Request.MedicationProvided.3": [MedicationRequest:"Doxycycline"]
 define "45.Patient.Death_Date": "Pt".deceased
-define "46.Encounter.Date_Discharged": "LastEncounter".period.end.value
+/*define "46.Encounter.Date_Discharged": "LastEncounter".period.end.value
+define "47.Observation.Lab_Results": [Observation: Code in "Chlamydia Labs"]*/
 define "48.Condition.Trigger_Code": "Chlamydia Diagnosis".code
