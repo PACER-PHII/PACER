@@ -99,13 +99,14 @@ public class CQLFHIR2ECRService {
 					}
 				case "FhirBundleCursorStu3":
 				case "List":
-					handleList(ecr,result.get("result").asText());
+					handleList(ecr,result.get("result").asText(),result.get("name").asText());
 					break;
 				case "Condition":
 					if(!filteredResults.equalsIgnoreCase("{}")) {
 						filteredResults = fhirFilterService.applyFilter(result.get("result"),false);
 						Condition condition = (Condition)parser3.parseResource(filteredResults);
-						if(result.get("name").asText().equals("42.Condition.Diagnosis")) {
+						if(result.get("name").asText().equalsIgnoreCase("42.Condition.Diagnosis")) {
+							log.debug("CONDITION --- Found diagnosis key!");
 							addDiagnosis(ecr,condition);
 						}
 						handleCondition(ecr,condition);
@@ -160,7 +161,7 @@ public class CQLFHIR2ECRService {
 		return ecr;
 	}
 	
-	void handleList(ECR ecr,String list) {
+	void handleList(ECR ecr,String list,String keyName) {
 		log.debug("HANDLE LIST --- inputString:"+list);
 		//Check for json list. Handling only json resources.
 		if(list.substring(0, 2).equalsIgnoreCase("[{")) {
@@ -178,11 +179,11 @@ public class CQLFHIR2ECRService {
 				IBaseResource resource = parser3.parseResource(filteredResource);
 				inputBundle.addEntry(new BundleEntryComponent().setResource((Resource)resource));
 			}
-			handleBundle(ecr,inputBundle);
+			handleBundle(ecr,inputBundle,keyName);
 		}
 	}
 	
-	void handleBundle(ECR ecr, Bundle bundle) {
+	void handleBundle(ECR ecr, Bundle bundle,String keyName) {
 		for(BundleEntryComponent entry : bundle.getEntry()) {
 			Resource resource = entry.getResource();
 			if(resource != null) {
@@ -205,6 +206,10 @@ public class CQLFHIR2ECRService {
 					handleMedicationStatement(ecr,(MedicationStatement)resource);
 				}
 				if(resource instanceof Condition) {
+					if(keyName.equalsIgnoreCase("42.Condition.Diagnosis")) {
+						log.debug("CONDITION --- Found diagnosis key!");
+						addDiagnosis(ecr,(Condition)resource);
+					}
 					handleCondition(ecr,(Condition)resource);
 				}
 				if(resource instanceof Encounter) {
