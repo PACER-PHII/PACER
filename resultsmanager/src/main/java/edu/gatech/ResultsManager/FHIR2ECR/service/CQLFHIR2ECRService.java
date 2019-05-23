@@ -105,6 +105,9 @@ public class CQLFHIR2ECRService {
 					if(!filteredResults.equalsIgnoreCase("{}")) {
 						filteredResults = fhirFilterService.applyFilter(result.get("result"),false);
 						Condition condition = (Condition)parser3.parseResource(filteredResults);
+						if(result.get("name").asText().equals("42.Condition.Diagnosis")) {
+							addDiagnosis(condition);
+						}
 						handleCondition(ecr,condition);
 						break;
 					}
@@ -793,6 +796,21 @@ public class CQLFHIR2ECRService {
 			case "46.Patient.Date_Discharged":
 				ecr.getPatient().setdateDischarged(value.toString());
 		}
+	}
+	
+	public void addDiagnosis(ECR ecr, Condition condition) {
+		Diagnosis diagnosis = new Diagnosis();
+		Coding coding = condition.getCode().getCodingFirstRep();
+		diagnosis.setCode(coding.getCode());
+		diagnosis.setDisplay(coding.getDisplay());
+		diagnosis.setSystem(coding.getSystem());
+		try {
+			diagnosis.setDate(HAPIFHIRUtil.getDate(condition.getOnsetDateTimeType()).toString());
+		} catch (FHIRException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		ecr.getPatient().getDiagnosis().add(diagnosis);
 	}
 	
 	public static boolean diagnosisContainsCodeableConcept(List<Diagnosis> listDiagnosis,gatech.edu.STIECR.JSON.CodeableConcept ecrConcept) {
