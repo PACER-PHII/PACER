@@ -59,14 +59,14 @@ public class HAPIFHIRUtil {
 	public static String addressToString(Address address) {
 		String returnString = "";
 		for(StringType line: address.getLine()) {
-			returnString.concat(line.getValue());
-			returnString.concat(" ");
+			returnString = returnString.concat(line.getValueNotNull());
+			returnString = returnString.concat(" ");
 		}
-		returnString.concat(address.getCity());
-		returnString.concat(", ");
-		returnString.concat(address.getState());
-		returnString.concat(" ");
-		returnString.concat(address.getPostalCode());
+		returnString = returnString.concat(address.getCity());
+		returnString = returnString.concat(", ");
+		returnString = returnString.concat(address.getState());
+		returnString = returnString.concat(" ");
+		returnString = returnString.concat(address.getPostalCode());
 		return returnString;
 	}
 	

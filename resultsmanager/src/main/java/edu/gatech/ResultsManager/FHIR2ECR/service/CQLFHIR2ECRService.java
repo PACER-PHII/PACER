@@ -261,11 +261,18 @@ public class CQLFHIR2ECRService {
 				ecr.getPatient().setethnicity(new gatech.edu.STIECR.JSON.CodeableConcept(coding.getSystem(),coding.getDisplay(),coding.getCode()));
 			}
 		}
+		PatientCommunicationComponent preferredCommunication = null;
 		for(PatientCommunicationComponent communication:patient.getCommunication()) {
 			if(communication.getPreferred()) {
-				Coding coding = communication.getLanguage().getCodingFirstRep();
-				ecr.getPatient().setpreferredLanguage(new gatech.edu.STIECR.JSON.CodeableConcept(coding.getSystem(),coding.getDisplay(),coding.getCode()));
+				preferredCommunication = communication;
 			}
+		}
+		if(preferredCommunication == null && patient.getCommunicationFirstRep() != null) {
+			preferredCommunication = patient.getCommunicationFirstRep();
+		}
+		if(preferredCommunication != null) {
+			Coding coding = preferredCommunication.getLanguage().getCodingFirstRep();
+			ecr.getPatient().setpreferredLanguage(new gatech.edu.STIECR.JSON.CodeableConcept(coding.getSystem(),coding.getDisplay(),coding.getCode()));
 		}
 		if(!patient.getAddress().isEmpty()) {
 			Address address = patient.getAddressFirstRep();
@@ -809,13 +816,20 @@ public class CQLFHIR2ECRService {
 		diagnosis.setCode(coding.getCode());
 		diagnosis.setDisplay(coding.getDisplay());
 		diagnosis.setSystem(coding.getSystem());
-		try {
-			diagnosis.setDate(HAPIFHIRUtil.getDate(condition.getOnsetDateTimeType()).toString());
-		} catch (FHIRException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if(condition.getOnset() != null) {
+			try {
+				diagnosis.setDate(HAPIFHIRUtil.getDate(condition.getOnsetDateTimeType()).toString());
+			} catch (FHIRException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		ecr.getPatient().getDiagnosis().add(diagnosis);
+		else if(condition.getAssertedDate() != null) {
+			diagnosis.setDate(condition.getAssertedDate().toString());
+		}
+		if(!ecr.getPatient().getDiagnosis().contains(diagnosis)) {
+			ecr.getPatient().getDiagnosis().add(diagnosis);
+		}
 	}
 	
 	public static boolean diagnosisContainsCodeableConcept(List<Diagnosis> listDiagnosis,gatech.edu.STIECR.JSON.CodeableConcept ecrConcept) {
