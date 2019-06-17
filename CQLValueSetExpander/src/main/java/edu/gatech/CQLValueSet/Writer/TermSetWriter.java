@@ -13,13 +13,25 @@ public class TermSetWriter {
 	private static String systemDefinitionTemplate = "codesystem \"<codesystem_name>\": '<codesystem_value>'\n";
 	private static String conceptSetTemplate = "define \"<valueset_name>\": Concept { <codelist> }\n";
 	private static String singleConceptTemplate = "Code '<code_value>' from <system_name>";
+	private static String systemIdentifierLintRegex = "[^A-Za-z0-9]";
 	
 	public static String convertAllTermSetToCQL(List<TermSet> termsets) {
 		Set<String> systemsWritten = new HashSet();
 		StringWriter outputWriter = new StringWriter();
+		//Collect all systems
 		for(TermSet termset:termsets) {
 			try {
-				String line = convertTermSetToString(termset,systemsWritten);
+				String line = convertTermSetsCodeSystemToString(termset,systemsWritten);
+				outputWriter.append(line);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		//Print all termsets after the systems
+		for(TermSet termset:termsets) {
+			try {
+				String line = convertTermSetsValueSetToString(termset,systemsWritten);
 				outputWriter.append(line);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -28,7 +40,8 @@ public class TermSetWriter {
 		}
 		return outputWriter.toString();
 	}
-	public static String convertTermSetToString(TermSet termset,Set<String> systemsWritten) throws IOException {
+	
+	public static String convertTermSetsCodeSystemToString(TermSet termset,Set<String> systemsWritten) throws IOException {
 		StringWriter stringWriter = new StringWriter();
 		BufferedWriter outputWriter = new BufferedWriter(stringWriter);
 		for(String system:termset.getSystems()) {
@@ -40,6 +53,14 @@ public class TermSetWriter {
 				outputWriter.write(finalSystemString);
 			}
 		}
+		outputWriter.flush();
+		outputWriter.close();
+		return stringWriter.toString();
+	}
+	
+	public static String convertTermSetsValueSetToString(TermSet termset,Set<String> systemsWritten) throws IOException {
+		StringWriter stringWriter = new StringWriter();
+		BufferedWriter outputWriter = new BufferedWriter(stringWriter);
 		String codeListString = "";
 		StringBuilder codeListBuilder = new StringBuilder();
 		for(String system:systemsWritten) {
@@ -62,6 +83,7 @@ public class TermSetWriter {
 		String systemIdentifier = system;
 		if(systemIdentifier.contains("/")) {
 			systemIdentifier = systemIdentifier.substring(systemIdentifier.lastIndexOf('/') + 1);
+			systemIdentifier = systemIdentifier.replaceAll(systemIdentifierLintRegex, "");
 		}
 		return systemIdentifier;
 	}
