@@ -479,7 +479,7 @@ public class CQLFHIR2ECRService {
 		} else if (medicationCodeUntyped instanceof Reference) {
 			code = ((Medication) ((Reference) medicationCodeUntyped).getResource()).getCode();
 		}
-		if (code != null && code.getCodingFirstRep()) {
+		if (code != null && code.getCodingFirstRep() != null) {
 			log.info("MEDICATIONSTATEMENT --- Trying coding: " + code.getCodingFirstRep().getDisplay());
 			gatech.edu.STIECR.JSON.CodeableConcept concept = FHIRCoding2ECRConcept(code.getCodingFirstRep());
 			log.info("MEDICATIONSTATEMENT --- Translated to ECRconcept:" + concept.toString());
