@@ -270,7 +270,7 @@ public class CQLFHIR2ECRService {
 		if(preferredCommunication == null && patient.getCommunicationFirstRep() != null) {
 			preferredCommunication = patient.getCommunicationFirstRep();
 		}
-		if(preferredCommunication != null) {
+		if(preferredCommunication != null && preferredCommunication.getLanguage().getCodingFirstRep() != null) {
 			Coding coding = preferredCommunication.getLanguage().getCodingFirstRep();
 			ecr.getPatient().setpreferredLanguage(new gatech.edu.STIECR.JSON.CodeableConcept(coding.getSystem(),coding.getDisplay(),coding.getCode()));
 		}
@@ -399,7 +399,7 @@ public class CQLFHIR2ECRService {
 		} else if (medicationCodeUntyped instanceof Reference) {
 			code = ((Medication) ((Reference) medicationCodeUntyped).getResource()).getCode();
 		}
-		if (code != null) {
+		if (code != null && code.getCodingFirstRep() != null) {
 			log.info("MEDICATIONREQUEST --- Trying coding: " + code.getCodingFirstRep().getDisplay());
 			gatech.edu.STIECR.JSON.CodeableConcept concept = FHIRCoding2ECRConcept(code.getCodingFirstRep());
 			log.info("MEDICATIONREQUEST --- Translated to ECRconcept:" + concept.toString());
@@ -479,7 +479,7 @@ public class CQLFHIR2ECRService {
 		} else if (medicationCodeUntyped instanceof Reference) {
 			code = ((Medication) ((Reference) medicationCodeUntyped).getResource()).getCode();
 		}
-		if (code != null) {
+		if (code != null && code.getCodingFirstRep()) {
 			log.info("MEDICATIONSTATEMENT --- Trying coding: " + code.getCodingFirstRep().getDisplay());
 			gatech.edu.STIECR.JSON.CodeableConcept concept = FHIRCoding2ECRConcept(code.getCodingFirstRep());
 			log.info("MEDICATIONSTATEMENT --- Translated to ECRconcept:" + concept.toString());
@@ -648,10 +648,12 @@ public class CQLFHIR2ECRService {
 	void handleEncounter(ECR ecr, Encounter encounter) {
 		log.info("ENCOUNTER --- Trying encounter: " + encounter.getId());
 		for (CodeableConcept reason : encounter.getReason()) {
-			gatech.edu.STIECR.JSON.CodeableConcept concept = FHIRCoding2ECRConcept(reason.getCodingFirstRep());
-			if (!ecr.getPatient().getsymptoms().contains(concept)) {
-				ecr.getPatient()
-						.setvisitDateTime(DateUtil.dateTimeToStdString(encounter.getPeriod().getStart()));
+			if(reason.getCodingFirstRep() != null) {
+				gatech.edu.STIECR.JSON.CodeableConcept concept = FHIRCoding2ECRConcept(reason.getCodingFirstRep());
+				if (!ecr.getPatient().getsymptoms().contains(concept)) {
+					ecr.getPatient()
+							.setvisitDateTime(DateUtil.dateTimeToStdString(encounter.getPeriod().getStart()));
+				}
 			}
 		}
 	}
@@ -670,7 +672,7 @@ public class CQLFHIR2ECRService {
 				if (untypedValue instanceof Quantity) {
 					labResult.setValue(((Quantity) untypedValue).getValue().toString());
 				} else
-				if (untypedValue instanceof CodeableConcept) {
+				if (untypedValue instanceof CodeableConcept && ((CodeableConcept) untypedValue).getCodingFirstRep() != null) {
 					labResult.setValue(((CodeableConcept) untypedValue).getCodingFirstRep().getDisplay());
 				} else
 				if (untypedValue instanceof StringType) {
@@ -813,9 +815,11 @@ public class CQLFHIR2ECRService {
 	public void addDiagnosis(ECR ecr, Condition condition) {
 		Diagnosis diagnosis = new Diagnosis();
 		Coding coding = condition.getCode().getCodingFirstRep();
-		diagnosis.setCode(coding.getCode());
-		diagnosis.setDisplay(coding.getDisplay());
-		diagnosis.setSystem(coding.getSystem());
+		if(coding != null) {
+			diagnosis.setCode(coding.getCode());
+			diagnosis.setDisplay(coding.getDisplay());
+			diagnosis.setSystem(coding.getSystem());
+		}
 		if(condition.getOnset() != null) {
 			try {
 				diagnosis.setDate(HAPIFHIRUtil.getDate(condition.getOnsetDateTimeType()).toString());
