@@ -22,6 +22,10 @@ import org.cqframework.cql.cql2elm.CqlTranslator;
 import org.cqframework.cql.cql2elm.CqlTranslatorException;
 import org.cqframework.cql.cql2elm.LibraryManager;
 import org.cqframework.cql.cql2elm.ModelManager;
+import org.cqframework.cql.elm.execution.Code;
+import org.cqframework.cql.elm.execution.CodeSystemDef;
+import org.cqframework.cql.elm.execution.CodeSystemRef;
+import org.cqframework.cql.elm.execution.Expression;
 import org.cqframework.cql.elm.execution.ExpressionDef;
 import org.cqframework.cql.elm.execution.FunctionDef;
 import org.cqframework.cql.elm.execution.Library;
@@ -35,8 +39,30 @@ import org.json.simple.parser.ParseException;
 import org.opencds.cqf.cql.data.fhir.BaseFhirDataProvider;
 import org.opencds.cqf.cql.data.fhir.FhirBundleCursorStu3;
 import org.opencds.cqf.cql.data.fhir.FhirDataProviderStu3;
+import org.opencds.cqf.cql.elm.execution.CodeEvaluator;
+import org.opencds.cqf.cql.elm.execution.CodeSystemRefEvaluator;
+import org.opencds.cqf.cql.elm.execution.ConceptEvaluator;
 import org.opencds.cqf.cql.terminology.fhir.FhirTerminologyProvider;
+import org.opencds.cqf.cql.util.LibraryUtil;
+import org.opencds.cqf.cql.util.service.BaseCodeMapperService;
+import org.opencds.cqf.cql.util.service.BaseCodeMapperService.CodeMapperIncorrectEquivalenceException;
+import org.opencds.cqf.cql.util.service.BaseCodeMapperService.CodeMapperNotFoundException;
+import org.opencds.cqf.cql.util.service.FhirCodeMapperServiceStu3;
 
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.rest.api.EncodingEnum;
+import ca.uhn.fhir.rest.client.api.ServerValidationModeEnum;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.xml.bind.JAXBException;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.EncodingEnum;
 import ca.uhn.fhir.rest.client.api.ServerValidationModeEnum;
@@ -52,6 +78,7 @@ public class Executor {
 
     // for future use
     private ModelManager modelManager;
+    private BaseCodeMapperService codeMapperService;
     private ModelManager getModelManager() {
         if (modelManager == null) {
             modelManager = new ModelManager();
@@ -86,7 +113,8 @@ public class Executor {
     }
 
     private void registerProviders(Context context, String termSvcUrl, String termUser,
-                                   String termPass, String dataPvdrURL, String dataUser, String dataPass)
+                                   String termPass, String dataPvdrURL, String dataUser,
+                                   String dataPass, String codeMapServiceUri)
     {
         // TODO: plugin authorization for data provider when available
 
@@ -105,7 +133,8 @@ public class Executor {
         FhirTerminologyProvider terminologyProvider = new FhirTerminologyProvider()
                 .withBasicAuth(termUser, termPass)
                 .setEndpoint(termSvcUrl == null ? defaultEndpoint : termSvcUrl, false);
-
+        
+        codeMapperService = codeMapServiceUri == null ? null : new FhirCodeMapperServiceStu3().setEndpoint(codeMapServiceUri);
         provider.setTerminologyProvider(terminologyProvider);
 //        provider.setSearchUsingPOST(true);
         provider.setExpandValueSets(true);
@@ -229,6 +258,10 @@ public class Executor {
         json.remove("dataPass");
         String patientId = (String) json.get("patientId");
         json.remove("patientId");
+        String codeMapperServiceUri = (String) json.get("codeMapperServiceUri");
+        json.remove("codeMapperServiceUri");
+        JSONObject codeMapperSystemsMap =  (JSONObject) json.get("codeMapperSystemsMap");
+        json.remove("codeMapperSystemsMap");
 
         
         CqlTranslator translator;
@@ -261,7 +294,7 @@ public class Executor {
         Library library = translateLibrary(translator);
 
         Context context = new Context(library);
-        registerProviders(context, terminologyServiceUri, terminologyUser, terminologyPass, dataServiceUri, dataUser, dataPass);
+        registerProviders(context, terminologyServiceUri, terminologyUser, terminologyPass, dataServiceUri, dataUser, dataPass, codeMapperServiceUri);
 
         JSONArray resultArr = new JSONArray();
         if(library.getParameters() != null) {
@@ -271,7 +304,44 @@ public class Executor {
 	        	}
 	        }
         }
+        if(codeMapperService != null && codeMapperSystemsMap != null) {
+        	for (ExpressionDef def: library.getStatements().getDef()) {
+	        	if(def.getExpression() instanceof ConceptEvaluator) {
+	        		ConceptEvaluator conceptEval = (ConceptEvaluator) def.getExpression();
+	        		for(Code codeConcept:new ArrayList<>(conceptEval.getCode())) { 
+	        			String systemRefName = codeConcept.getSystem().getName();
+	        			String sourceSystemUri = LibraryUtil.getCodeSystemDefFromName(library, systemRefName).getId();
+	        			if(codeMapperSystemsMap.get(sourceSystemUri) != null) { 
+	        				String targetSystemUri = (String) codeMapperSystemsMap.get(sourceSystemUri);
+	        				try {
+								List<Code> translatedCodes = codeMapperService.translateCode(codeConcept, sourceSystemUri, targetSystemUri, library);
+								List<CodeEvaluator> translatedCodeEvaluators = new ArrayList<CodeEvaluator>();
+								for(Code translatedCode:translatedCodes) {
+									CodeEvaluator translatedCodeEvaluator = new CodeEvaluator();
+									if(translatedCode.getCode() != null) {
+										translatedCodeEvaluator.withCode(translatedCode.getCode());
+									}
+									if(translatedCode.getDisplay() != null) {
+										translatedCodeEvaluator.withDisplay(translatedCode.getDisplay());
+									}
+									if(translatedCode.getSystem() != null) {
+										CodeSystemRefEvaluator systemRefEvaluator = new CodeSystemRefEvaluator();
+										systemRefEvaluator.withName(translatedCode.getSystem().getName());
+										translatedCodeEvaluator.withSystem(systemRefEvaluator);
+									}
+									translatedCodeEvaluators.add(translatedCodeEvaluator);
+								}
+								conceptEval.getCode().remove(codeConcept);
+								conceptEval.getCode().addAll(translatedCodeEvaluators);
+							} catch (CodeMapperIncorrectEquivalenceException | CodeMapperNotFoundException e) {
+							}
+	        			}
+	        		}
+	        	}
+        	}
+        }
         for (ExpressionDef def : library.getStatements().getDef()) {
+        	//Continue on executing statements afterwords!
             context.enterContext(def.getContext());
             if (patientId != null && !patientId.isEmpty()) {
                 context.setContextValue(context.getCurrentContext(), patientId);
