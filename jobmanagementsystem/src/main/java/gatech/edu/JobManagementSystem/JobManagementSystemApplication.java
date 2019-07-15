@@ -21,6 +21,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EntityScan("gatech.edu.JobManagementSystem.model")
 @EnableJpaRepositories("gatech.edu.JobManagementSystem.repo")
 @ComponentScan("gatech.edu.JobManagementSystem.controller")
+@ComponentScan("gatech.edu.JobManagementSystem.security")
 @ComponentScan("gatech.edu.JobManagementSystem")
 @EnableScheduling
 @SpringBootApplication

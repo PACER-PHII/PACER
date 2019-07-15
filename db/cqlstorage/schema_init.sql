@@ -1,0 +1,2 @@
+CREATE SCHEMA cqlstorage;
+CREATE SCHEMA jms;
