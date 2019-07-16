@@ -4,17 +4,6 @@ services:
     build:
       context: ./cql-execution-service
       
-  concept-translate:
-    depends_on:
-      - db
-      - cql-storage
-    build:
-      context: ./omoponfhir-omopv5-stu3-conceptmapping-server
-    environment:
-      JDBC_URL: "jdbc:postgresql://db:5432/db?currentSchema=omop_v5"
-      JDBC_USERNAME: "postgres"
-      JDBC_PASSWORD: "postgres"
-      
   cql-storage:
     depends_on:
       - db
@@ -26,7 +15,7 @@ services:
       JDBC_URL: "jdbc:postgresql://db:5432/db"
       JDBC_USERNAME: "postgres"
       JDBC_PASSWORD: "postgres"
-      
+    command: ["./wait-for", "db:5432", "--", "java -jar /usr/src/app/CQLStorage.jar"]
   db:
     build:
      context: ./db
@@ -90,3 +79,15 @@ services:
       CQL_EXECUTION_URL: "cql-execution"
       CQL_STORAGE_URL: "cql-storage"
       FHIR_FILTER_URL: "fhir-filter"
+      
+  translateconcept:
+    depends_on:
+      - db
+      - cql-storage
+    build:
+      context: ./omoponfhir-omopv5-stu3-conceptmapping-server
+    environment:
+      JDBC_URL: "jdbc:postgresql://db:5432/db?currentSchema=omop_v5"
+      JDBC_USERNAME: "postgres"
+      JDBC_PASSWORD: "postgres"
+    command: ["./wait-for", "db:5432", "--", "catalina.sh run"]
