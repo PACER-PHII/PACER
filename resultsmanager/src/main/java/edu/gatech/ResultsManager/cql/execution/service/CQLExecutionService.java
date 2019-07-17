@@ -1,10 +1,12 @@
 package edu.gatech.ResultsManager.cql.execution.service;
 
 import java.io.IOException;
+import java.time.Duration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpEntity;
@@ -36,12 +38,16 @@ public class CQLExecutionService {
 	private String terminologyPass;
 	private String dataUser;
 	private String dataPass;
+	private String codeMapperServiceUri;
+	private String codeMapperUser;
+	private String codeMapperPass;
+	private ObjectNode codeMapperSystemsMap;
 	private RestTemplate restTemplate;
 	private ObjectMapper objectMapper;
 	private ObjectNode requestJson;
 	
 	public CQLExecutionService() {
-		restTemplate = new RestTemplate();
+		restTemplate = new RestTemplateBuilder().setReadTimeout(Duration.ofMinutes(5)).build();
 		objectMapper = new ObjectMapper();
 		requestJson = JsonNodeFactory.instance.objectNode();
 	}
@@ -49,7 +55,7 @@ public class CQLExecutionService {
 	public JsonNode evaluateCQL(String cqlBody, String patientId) {
 		log.debug("cql body:"+cqlBody);
 		UriComponents uriComponents = UriComponentsBuilder.newInstance()
-				.scheme("http").host(endpoint).port("8080").path("/cql/evaluate").build();
+				.scheme("https").host(endpoint).port("443").path("/cql/evaluate").build();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		requestJson.put("terminologyServiceUri", terminologyServiceUri);
@@ -58,8 +64,12 @@ public class CQLExecutionService {
 		requestJson.put("terminologyPass", terminologyPass);
 		requestJson.put("dataUser", dataUser);
 		requestJson.put("dataPass", dataPass);
-		requestJson.put("code", cqlBody);
+		requestJson.put("codeMapperServiceUri", codeMapperServiceUri);
+		requestJson.put("codeMapperUser", codeMapperUser);
+		requestJson.put("codeMapperPass", codeMapperPass);
+		requestJson.put("codeMapperSystemsMap", codeMapperSystemsMap);
 		requestJson.put("patientId", patientId);
+		requestJson.put("code", cqlBody);
 		HttpEntity<String> entity = new HttpEntity<String>(requestJson.toString(), headers);
 		String cQLResultString = restTemplate.postForEntity(uriComponents.toUriString(), entity, String.class).getBody();
 		JsonNode resultsJson = null;
@@ -125,6 +135,43 @@ public class CQLExecutionService {
 
 	public void setDataPass(String dataPass) {
 		this.dataPass = dataPass;
+	}
+
+	public String getCodeMapperServiceUri() {
+		return codeMapperServiceUri;
+	}
+
+	public void setCodeMapperServiceUri(String codeMapperServiceUri) {
+		this.codeMapperServiceUri = codeMapperServiceUri;
+	}
+
+	public String getCodeMapperUser() {
+		return codeMapperUser;
+	}
+
+	public void setCodeMapperUser(String codeMapperUser) {
+		this.codeMapperUser = codeMapperUser;
+	}
+
+	public String getCodeMapperPass() {
+		return codeMapperPass;
+	}
+
+	public void setCodeMapperPass(String codeMapperPass) {
+		this.codeMapperPass = codeMapperPass;
+	}
+
+	public ObjectNode getCodeMapperSystemsMap() {
+		return codeMapperSystemsMap;
+	}
+
+	public void setCodeMapperSystemsMap(String codeMapperSystemsMap) {
+		try {
+			this.codeMapperSystemsMap = (ObjectNode) objectMapper.readTree(codeMapperSystemsMap);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 }

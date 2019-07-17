@@ -55,6 +55,7 @@ public class ResultsManagerController{
 		try {
 			patientId = patientIdentifierService.getFhirIdByIdentifier(identifier);
 		} catch (Exception e) {
+			log.error(e.getMessage());
 			return new ResponseEntity<ECR>(ecr,HttpStatus.UNPROCESSABLE_ENTITY);
 		}
 		log.debug("patientId:"+patientId);
