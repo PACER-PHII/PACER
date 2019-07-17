@@ -15,7 +15,8 @@ services:
       JDBC_URL: "jdbc:postgresql://db:5432/db"
       JDBC_USERNAME: "postgres"
       JDBC_PASSWORD: "postgres"
-    command: ["./wait-for", "db:5432", "--", "java -jar /usr/src/app/CQLStorage.jar"]
+    command: ["./wait-for-it.sh", "db:5432", "--timeout=300", "--" , "java", "-jar", "/usr/src/app/CQLStorage.jar"]
+
   db:
     build:
      context: ./db
@@ -46,13 +47,16 @@ services:
       JDBC_PASSWORD: "postgres"
       BASIC_USERNAME: "username"
       BASIC_PASSWORD: "password"
-      
+    command: ["./wait-for-it.sh", "db:5432", "--timeout=300", "--" ,"catalina.sh", "run"]
+
   nginx-cache:
     depends_on:
-      - concept-translate
+      - translateconcept 
     build:
       context: ./nginx-cache
-      
+    command: ["./wait-for-it.sh", "translateconcept:8080", "--timeout=300", "--" ,"nginx", "-g", "daemon off;"]
+
+ 
   results-manager:
     depends_on:
       - job-management-system
@@ -69,17 +73,16 @@ services:
       #Change if you want to use a seperate terminology service
       CQL_EXECUTION_TERMINOLOGY_SERVICE: "https://cts.nlm.nih.gov/fhir/"
       #Authorization credentials to the terminology service
-      CQL_EXECUTION_TERMINOLOGY_USER: ""
-      CQL_EXECUTION_TERMINOLOGY_PASS: ""
       #local code translation service
       CQL_EXECUTION_CODEMAPPER_SERVICE: "https://nginx-cache/fhir/"
       CQL_EXECUTION_CODEMAPPER_USER: "client"
       CQL_EXECUTION_CODEMAPPER_PASS: "secret"
       CQL_EXECUTION_CODEMAPPER_SYSTEMS_MAP: '{"http://www.nlm.nih.gov/research/umls/rxnorm":"http://hl7.org/fhir/ndfrt"}'
+      CQL_EXECUTION_TERMINOLOGY_USER: "jduke99"
+      CQL_EXECUTION_TERMINOLOGY_PASS: "v6R4*SsU39"
       CQL_EXECUTION_URL: "cql-execution"
       CQL_STORAGE_URL: "cql-storage"
       FHIR_FILTER_URL: "fhir-filter"
-      
   translateconcept:
     depends_on:
       - db
@@ -87,7 +90,7 @@ services:
     build:
       context: ./omoponfhir-omopv5-stu3-conceptmapping-server
     environment:
-      JDBC_URL: "jdbc:postgresql://db:5432/db?currentSchema=omop_v5"
-      JDBC_USERNAME: "postgres"
-      JDBC_PASSWORD: "postgres"
-    command: ["./wait-for", "db:5432", "--", "catalina.sh run"]
+      JDBC_URL: "jdbc:postgresql://db:5432/postgres?currentSchema=omop_v5"
+      JDBC_USERNAME: "omop_v5"
+      JDBC_PASSWORD: "i3lworks"
+    command: ["./wait-for-it.sh", "db:5432", "--timeout=300", "--" ,"catalina.sh", "run"]

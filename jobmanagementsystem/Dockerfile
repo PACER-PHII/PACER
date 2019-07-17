@@ -6,5 +6,6 @@ WORKDIR /usr/src/app
 RUN mvn package -DskipTests
 
 FROM tomcat:latest
+ADD wait-for-it.sh .
 COPY --from=builder /usr/src/app/target/JobManagementSystem-0.0.1-SNAPSHOT.war $CATALINA_HOME/webapps/JobManagementSystem.war
 EXPOSE 8080
