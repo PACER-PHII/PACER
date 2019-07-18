@@ -79,9 +79,9 @@ public class RestfulServlet extends RestfulServer {
 		/*
 		 * Set non resource provider.
 		 */
-		List<Object> plainProviders = new ArrayList<Object>();
-		SystemTransactionProvider systemTransactionProvider = new SystemTransactionProvider();
-		ServerOperations serverOperations = new ServerOperations();
+//		List<Object> plainProviders = new ArrayList<Object>();
+//		SystemTransactionProvider systemTransactionProvider = new SystemTransactionProvider();
+//		ServerOperations serverOperations = new ServerOperations();
 
 		/*
 		 * Define resource providers 
@@ -97,10 +97,10 @@ public class RestfulServlet extends RestfulServer {
 		/*
 		 * add system transaction provider to the plain provider.
 		 */
-		plainProviders.add(systemTransactionProvider);
-		plainProviders.add(serverOperations);
-		
-		setPlainProviders(plainProviders);
+//		plainProviders.add(systemTransactionProvider);
+//		plainProviders.add(serverOperations);
+//		
+//		setPlainProviders(plainProviders);
 		
 		/*
 		 * Set conformance provider
