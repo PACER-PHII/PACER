@@ -74,7 +74,7 @@ services:
       CQL_EXECUTION_TERMINOLOGY_SERVICE: "https://cts.nlm.nih.gov/fhir/"
       #Authorization credentials to the terminology service
       #local code translation service
-      CQL_EXECUTION_CODEMAPPER_SERVICE: "https://nginx-cache/fhir/"
+      CQL_EXECUTION_CODEMAPPER_SERVICE: "http://nginx-cache:8080/fhir/"
       CQL_EXECUTION_CODEMAPPER_USER: "client"
       CQL_EXECUTION_CODEMAPPER_PASS: "secret"
       CQL_EXECUTION_CODEMAPPER_SYSTEMS_MAP: '{"http://www.nlm.nih.gov/research/umls/rxnorm":"http://hl7.org/fhir/ndfrt"}'
@@ -93,4 +93,8 @@ services:
       JDBC_URL: "jdbc:postgresql://db:5432/postgres?currentSchema=omop_v5"
       JDBC_USERNAME: "omop_v5"
       JDBC_PASSWORD: "i3lworks"
+      SERVERBASE_URL: "http://translateconcept/fhir"
+      LOCAL_PYPASS: "True"
+      AUTH_TYPE: "Basic client:secret"
+      MAPPING_TERMINOLOGY_URL: "https://apps.hdap.gatech.edu/gt-fhir/fhir/ConceptMap/"
     command: ["./wait-for-it.sh", "db:5432", "--timeout=300", "--" ,"catalina.sh", "run"]

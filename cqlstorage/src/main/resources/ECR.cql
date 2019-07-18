@@ -19,7 +19,7 @@ context Patient
 
 define "myFeature": 'myText'
 define "Pt": [Patient] Pt
-define "Chlamydia Diagnosis": [Condition:"Chlamydia_Codes"]
+define "Chlamydia Diagnosis": [Condition: Code in "Chlamydia_Codes"]
 define "19.Patient.ID": "Pt".identifier[0].value
 define "20A.Patient.Name.given": "Pt".name[0].given[0]
 define "20B.Patient.Name.family": "Pt".name[0].family
