@@ -75,11 +75,11 @@ services:
       #Authorization credentials to the terminology service
       #local code translation service
       CQL_EXECUTION_CODEMAPPER_SERVICE: "http://nginx-cache:8080/fhir/"
-      CQL_EXECUTION_CODEMAPPER_USER: "client"
-      CQL_EXECUTION_CODEMAPPER_PASS: "secret"
+      CQL_EXECUTION_CODEMAPPER_USER: "client" #Update to your translate server credentials
+      CQL_EXECUTION_CODEMAPPER_PASS: "secret" #Update to your translate server credentials
       CQL_EXECUTION_CODEMAPPER_SYSTEMS_MAP: '{"http://www.nlm.nih.gov/research/umls/rxnorm":"http://hl7.org/fhir/ndfrt"}'
-      CQL_EXECUTION_TERMINOLOGY_USER: "jduke99"
-      CQL_EXECUTION_TERMINOLOGY_PASS: "v6R4*SsU39"
+      CQL_EXECUTION_TERMINOLOGY_USER: "" #Update to your terminology credentials
+      CQL_EXECUTION_TERMINOLOGY_PASS: "" #Update to your terminology credentials
       CQL_EXECUTION_URL: "cql-execution"
       CQL_STORAGE_URL: "cql-storage"
       FHIR_FILTER_URL: "fhir-filter"
@@ -95,6 +95,6 @@ services:
       JDBC_PASSWORD: "i3lworks"
       SERVERBASE_URL: "http://translateconcept/fhir"
       LOCAL_PYPASS: "True"
-      AUTH_TYPE: "Basic client:secret"
-      MAPPING_TERMINOLOGY_URL: "https://apps.hdap.gatech.edu/gt-fhir/fhir/ConceptMap/"
+      AUTH_TYPE: "Basic client:secret" #Update to local translate service basic credentials
+      MAPPING_TERMINOLOGY_URL: "https://apps.hdap.gatech.edu/gt-fhir/fhir/ConceptMap/" #Update to local translate service
     command: ["./wait-for-it.sh", "db:5432", "--timeout=300", "--" ,"catalina.sh", "run"]
