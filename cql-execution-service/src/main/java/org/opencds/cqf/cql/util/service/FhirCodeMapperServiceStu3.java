@@ -21,8 +21,8 @@ public class FhirCodeMapperServiceStu3 extends BaseCodeMapperService {
 
 	public FhirCodeMapperServiceStu3() {
 		this.fhirContext = FhirContext.forDstu3();
-        fhirContext.getRestfulClientFactory().setSocketTimeout(1200 * 10000);
-        
+		fhirContext.getRestfulClientFactory().setPoolMaxPerRoute(1);
+		fhirContext.getRestfulClientFactory().setPoolMaxTotal(1);
 	}
 	
 	@Override
