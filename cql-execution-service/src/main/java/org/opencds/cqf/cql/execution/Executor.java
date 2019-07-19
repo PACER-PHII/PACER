@@ -114,7 +114,8 @@ public class Executor {
 
     private void registerProviders(Context context, String termSvcUrl, String termUser,
                                    String termPass, String dataPvdrURL, String dataUser,
-                                   String dataPass, String codeMapServiceUri)
+                                   String dataPass, String codeMapServiceUri, String codeMapperUser,
+                                   String codeMapperPass)
     {
         // TODO: plugin authorization for data provider when available
 
@@ -134,7 +135,9 @@ public class Executor {
                 .withBasicAuth(termUser, termPass)
                 .setEndpoint(termSvcUrl == null ? defaultEndpoint : termSvcUrl, false);
         
-        codeMapperService = codeMapServiceUri == null ? null : new FhirCodeMapperServiceStu3().setEndpoint(codeMapServiceUri);
+        codeMapperService = codeMapServiceUri == null ? null : new FhirCodeMapperServiceStu3()
+        		.withBasicAuth(codeMapperUser,codeMapperPass)
+        		.setEndpoint(codeMapServiceUri);
         provider.setTerminologyProvider(terminologyProvider);
 //        provider.setSearchUsingPOST(true);
         provider.setExpandValueSets(true);
@@ -260,6 +263,10 @@ public class Executor {
         json.remove("patientId");
         String codeMapperServiceUri = (String) json.get("codeMapperServiceUri");
         json.remove("codeMapperServiceUri");
+        String codeMapperUser = (String) json.get("codeMapperUser");
+        json.remove("codeMapperUser");
+        String codeMapperPass = (String) json.get("codeMapperPass");
+        json.remove("codeMapperPass");
         JSONObject codeMapperSystemsMap =  (JSONObject) json.get("codeMapperSystemsMap");
         json.remove("codeMapperSystemsMap");
 
@@ -294,7 +301,7 @@ public class Executor {
         Library library = translateLibrary(translator);
 
         Context context = new Context(library);
-        registerProviders(context, terminologyServiceUri, terminologyUser, terminologyPass, dataServiceUri, dataUser, dataPass, codeMapperServiceUri);
+        registerProviders(context, terminologyServiceUri, terminologyUser, terminologyPass, dataServiceUri, dataUser, dataPass, codeMapperServiceUri, codeMapperUser, codeMapperPass);
 
         JSONArray resultArr = new JSONArray();
         if(library.getParameters() != null) {

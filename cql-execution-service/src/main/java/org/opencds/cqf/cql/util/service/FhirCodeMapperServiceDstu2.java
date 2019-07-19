@@ -22,8 +22,6 @@ public class FhirCodeMapperServiceDstu2 extends BaseCodeMapperService {
 
 	public FhirCodeMapperServiceDstu2() {
 		this.fhirContext = FhirContext.forDstu2();
-        fhirContext.getRestfulClientFactory().setSocketTimeout(1200 * 10000);
-        
 	}
 	
 	@Override
