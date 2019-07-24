@@ -89,11 +89,13 @@ services:
       - cql-storage
     build:
       context: ./omoponfhir-omopv5-stu3-conceptmapping-server
+    ports:
+      - "8083:8080"
     environment:
       JDBC_URL: "jdbc:postgresql://db:5432/postgres?currentSchema=omop_v5"
       JDBC_USERNAME: "omop_v5"
       JDBC_PASSWORD: "i3lworks"
-      SERVERBASE_URL: "http://translateconcept/fhir"
+      SERVERBASE_URL: "http://translateconcept:8080/omoponfhir-conceptmapping/fhir"
       LOCAL_PYPASS: "True"
       AUTH_TYPE: "Basic client:secret" #Update to local translate service basic credentials
       MAPPING_TERMINOLOGY_URL: "https://apps.hdap.gatech.edu/gt-fhir/fhir/ConceptMap/" #Update to local translate service
