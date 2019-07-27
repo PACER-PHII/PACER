@@ -29,16 +29,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-//import edu.gatech.chai.omopv5.jpa.service.CareSiteService;
-//import edu.gatech.chai.omopv5.jpa.service.CareSiteServiceImp;
-
 @Configuration
+// @EnableScheduling
 @EnableTransactionManagement
 @ComponentScans(value = { @ComponentScan("edu.gatech.chai.omopv5.jpa.dao"),
 		@ComponentScan("edu.gatech.chai.omopv5.dba.service"),
 		@ComponentScan("edu.gatech.chai.smart.jpa.dao"),
+//		@ComponentScan("edu.gatech.chai.omoponfhir.local.task"),
 		@ComponentScan("edu.gatech.chai.smart.jpa.service")})
 @ImportResource({
     "classpath:database-config.xml"
@@ -46,21 +46,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 public class FhirServerConfig {
 	@Autowired
 	DataSource dataSource;
-//	@Bean(destroyMethod = "close")
-//	public DataSource dataSource() {
-//		BasicDataSource retVal = new BasicDataSource();
-//		retVal.setDriver(new org.postgresql.Driver());
-//		retVal.setUrl("jdbc:postgresql://localhost:5432/postgres?currentSchema=omop_v5");
-//		retVal.setUsername("omop_v5");
-//		retVal.setPassword("i3lworks");
-//		return retVal;
-//	}
 
 	@Bean()
 	public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
 		LocalContainerEntityManagerFactoryBean retVal = new LocalContainerEntityManagerFactoryBean();
 		retVal.setPersistenceUnitName("GT-FHIR2");
-//		retVal.setDataSource(dataSource());
 		retVal.setDataSource(dataSource);
 		retVal.setPackagesToScan("edu.gatech.chai.omopv5.model.entity", "edu.gatech.chai.smart.jpa.entity");
 		retVal.setPersistenceProvider(new HibernatePersistenceProvider());
@@ -71,7 +61,6 @@ public class FhirServerConfig {
 	private Properties jpaProperties() {
 		Properties extraProperties = new Properties();
 		extraProperties.put("hibernate.dialect", org.hibernate.dialect.PostgreSQL94Dialect.class.getName());
-//		extraProperties.put("hibernate.dialect", edu.gatech.chai.omopv5.jpa.enity.noomop.OmopPostgreSQLDialect.class.getName());
 		extraProperties.put("hibernate.format_sql", "true");
 		extraProperties.put("hibernate.show_sql", "false");
 		extraProperties.put("hibernate.hbm2ddl.auto", "update");
