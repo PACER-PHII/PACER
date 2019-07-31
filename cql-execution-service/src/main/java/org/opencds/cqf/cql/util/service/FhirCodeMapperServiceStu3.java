@@ -44,7 +44,7 @@ public class FhirCodeMapperServiceStu3 extends BaseCodeMapperService {
 					for(ParametersParameterComponent matchpart:outParam.getPart()){
 						if(matchpart.hasName() && matchpart.getName().equals("equivalence")) {
 							String equivalenceValue = ((CodeType)matchpart.getValue()).primitiveValue();
-							if(!equivalenceValue.equals("equivalent")) {
+							if(! (equivalenceValue.equals("equivalent") || equivalenceValue.equals("equal")) ) {
 								throw new CodeMapperIncorrectEquivalenceException("Translated code expected an equivalent match but found a match of equivalence " + equivalenceValue + "instead");
 							}
 						}

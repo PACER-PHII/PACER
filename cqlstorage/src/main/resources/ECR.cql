@@ -14,7 +14,6 @@ define "Levofloxacin": Concept { Code '1665507' from rxnorm, Code '1665519' from
 define "Doxycycline": Concept { Code '434018' from rxnorm, Code '348870' from rxnorm, Code '406524' from rxnorm, Code '1649990' from rxnorm, Code '1650143' from rxnorm, Code '1653433' from rxnorm, Code '1650444' from rxnorm, Code '1650446' from rxnorm, Code '1650142' from rxnorm, Code '1791505' from rxnorm, Code '348869' from rxnorm, Code '1998483' from rxnorm, Code '1423080' from rxnorm, Code '1649405' from rxnorm, Code '1649988' from rxnorm, Code '1649425' from rxnorm, Code '757466' from rxnorm, Code '1649401' from rxnorm, Code '799048' from rxnorm, Code '757464' from rxnorm, Code '901399' from rxnorm, Code '1652674' from rxnorm, Code '1652673' from rxnorm, Code '728207' from rxnorm, Code '757460' from rxnorm, Code '835700' from rxnorm, Code '597521' from rxnorm, Code '597520' from rxnorm, Code '700408' from rxnorm, Code '1801138' from rxnorm, Code '310026' from rxnorm, Code '310027' from rxnorm, Code '310028' from rxnorm, Code '1650030' from rxnorm, Code '283535' from rxnorm, Code '1650032' from rxnorm, Code '1649429' from rxnorm }
 define "Chlamydia Symptoms": Concept { Code '49650001' from "sct", Code '2910007' from "sct" }
 
-
 context Patient
 
 define "myFeature": 'myText'

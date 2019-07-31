@@ -21,11 +21,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.opencds.cqf</groupId>
-            <artifactId>cql-engine</artifactId>
-            <version>GATECH-1.2.53-SNAPSHOT</version>
-        </dependency>
-        <dependency>
             <groupId>ca.uhn.hapi.fhir</groupId>
             <artifactId>hapi-fhir-base</artifactId>
             <version>${hapi_version}</version>
@@ -44,6 +39,11 @@
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
             <version>1.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.opencds.cqf</groupId>
+            <artifactId>cql-engine</artifactId>
+            <version>GATECH-1.2.53-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
