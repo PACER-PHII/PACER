@@ -47,9 +47,9 @@ define "AllEncounters": [Encounter] Encounters
 define "FirstEncounter": First("AllEncounters" AllEns)
 define "LastEncounter": Last("AllEncounters" AllEns)
 define "43.Encounters.Date_Of_Diagnosis": "FirstEncounter".period.start.value
-define "44.Medication_Request.MedicationProvided.1": [MedicationRequest:"Macrolides"]
-define "44.Medication_Request.MedicationProvided.2": [MedicationRequest:"Levofloxacin"]
-define "44.Medication_Request.MedicationProvided.3": [MedicationRequest:"Doxycycline"]
+define "44.Medication_Request.MedicationProvided.1": [MedicationRequest: medicationReference.code "Macrolides"]
+define "44.Medication_Request.MedicationProvided.2": [MedicationRequest: medicationReference.code "Levofloxacin"]
+define "44.Medication_Request.MedicationProvided.3": [MedicationRequest: medicationReference.code "Doxycycline"]
 define "45.Patient.Death_Date": "Pt".deceased
 define "46.Encounter.Date_Discharged": "LastEncounter".period.end.value
 define "48.Condition.Trigger_Code": "Chlamydia Diagnosis".code
