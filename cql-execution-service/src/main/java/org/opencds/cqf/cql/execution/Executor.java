@@ -12,9 +12,11 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBException;
 
@@ -112,7 +114,7 @@ public class Executor {
         return libraryLoader;
     }
 
-    private void registerProviders(Context context, String termSvcUrl, String termUser,
+    private void registerProviders(Context context, String bearerToken, String termSvcUrl, String termUser,
                                    String termPass, String dataPvdrURL, String dataUser,
                                    String dataPass, String codeMapServiceUri, String codeMapperUser,
                                    String codeMapperPass)
@@ -125,6 +127,10 @@ public class Executor {
         if(dataUser != null && !dataUser.isEmpty() && dataPass != null && !dataPass.isEmpty()) {
         	provider = provider.withBasicAuth(dataUser,dataPass);
         }
+        if(bearerToken != null && !bearerToken.isEmpty()) {
+        	bearerToken = bearerToken.split("Bearer ")[1];
+        	provider = provider.withBearerAuth(bearerToken);
+        }
         provider.setEndpoint(dataPvdrURL == null ? defaultEndpoint : dataPvdrURL);
         FhirContext fhirContext = provider.getFhirContext();
         fhirContext.getRestfulClientFactory().setServerValidationMode(ServerValidationModeEnum.NEVER);
@@ -135,9 +141,10 @@ public class Executor {
                 .withBasicAuth(termUser, termPass)
                 .setEndpoint(termSvcUrl == null ? defaultEndpoint : termSvcUrl, false);
         
-        codeMapperService = codeMapServiceUri == null ? null : new FhirCodeMapperServiceStu3()
+        codeMapperService = (codeMapServiceUri != null && !codeMapServiceUri.isEmpty()) ? new FhirCodeMapperServiceStu3()
         		.withBasicAuth(codeMapperUser,codeMapperPass)
-        		.setEndpoint(codeMapServiceUri);
+        		.setEndpoint(codeMapServiceUri)
+        		: null;
         provider.setTerminologyProvider(terminologyProvider);
 //        provider.setSearchUsingPOST(true);
         provider.setExpandValueSets(true);
@@ -235,7 +242,7 @@ public class Executor {
     @POST
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public String evaluateCql(String requestData) throws JAXBException, IOException, ParseException {
+    public String evaluateCql(@HeaderParam("Authorization") String bearerToken, String requestData) throws JAXBException, IOException, ParseException {
 
         JSONParser parser = new JSONParser();
         JSONObject json;
@@ -301,7 +308,7 @@ public class Executor {
         Library library = translateLibrary(translator);
 
         Context context = new Context(library);
-        registerProviders(context, terminologyServiceUri, terminologyUser, terminologyPass, dataServiceUri, dataUser, dataPass, codeMapperServiceUri, codeMapperUser, codeMapperPass);
+        registerProviders(context, bearerToken, terminologyServiceUri, terminologyUser, terminologyPass, dataServiceUri, dataUser, dataPass, codeMapperServiceUri, codeMapperUser, codeMapperPass);
 
         JSONArray resultArr = new JSONArray();
         if(library.getParameters() != null) {

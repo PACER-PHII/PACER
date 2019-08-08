@@ -43,13 +43,42 @@ define "39.Observation.Symptoms": [Condition: Code in "Chlamydia Symptoms"]
 define "40.Lab?.LabOrderCode": 'TBD'
 define "41.Provider.Placer_Order_Number": 'TBD'
 define "42.Condition.Diagnosis": "Chlamydia Diagnosis"
-define "AllEncounters": [Encounter] Encounters
+define "AllEncounters":
+  [Encounter] Encounters
+  let
+    ConditionRef: (Encounters.subject as FHIR.Reference).reference
+  where
+    "Pt".id = ConditionRef or EndsWith(ConditionRef, '/' + "Pt".id)
+  sort by start of period asc
 define "FirstEncounter": First("AllEncounters" AllEns)
 define "LastEncounter": Last("AllEncounters" AllEns)
 define "43.Encounters.Date_Of_Diagnosis": "FirstEncounter".period.start.value
-define "44.Medication_Request.MedicationProvided.1": [MedicationRequest: medicationReference.code "Macrolides"]
-define "44.Medication_Request.MedicationProvided.2": [MedicationRequest: medicationReference.code "Levofloxacin"]
-define "44.Medication_Request.MedicationProvided.3": [MedicationRequest: medicationReference.code "Doxycycline"]
+define "44.Medication.MedicationProvided.1": [Medication: "Macrolides"]
+define "44.Medication.MedicationProvided.2": [Medication: "Levofloxacin"]
+define "44.Medication.MedicationProvided.3": [Medication: "Doxycycline"]
+define "44.Medication_Request.MedicationProvided.1":
+  [MedicationRequest: "Macrolides"] medRequest
+  with "44.Medication.MedicationProvided.1" meds
+  let
+    MedicationRef: (medRequest.subject as FHIR.Reference).reference
+  such that
+    meds.id = MedicationRef or EndsWith(MedicationRef, '/' + meds.id)
+define "44.Medication_Request.MedicationProvided.2":
+  [MedicationRequest: "Levofloxacin"] medRequest
+  with "44.Medication.MedicationProvided.2" meds
+  let
+    MedicationRef: (medRequest.subject as FHIR.Reference).reference
+  such that
+    meds.id = MedicationRef or EndsWith(MedicationRef, '/' + meds.id)
+
+define "44.Medication_Request.MedicationProvided.3":
+  [MedicationRequest: "Doxycycline"] medRequest
+  with "44.Medication.MedicationProvided.3" meds
+  let
+    MedicationRef: (medRequest.subject as FHIR.Reference).reference
+  such that
+    meds.id = MedicationRef or EndsWith(MedicationRef, '/' + meds.id)
+
 define "45.Patient.Death_Date": "Pt".deceased
 define "46.Encounter.Date_Discharged": "LastEncounter".period.end.value
 define "48.Condition.Trigger_Code": "Chlamydia Diagnosis".code
