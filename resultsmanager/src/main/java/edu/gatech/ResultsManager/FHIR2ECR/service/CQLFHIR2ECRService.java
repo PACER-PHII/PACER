@@ -16,6 +16,7 @@ import org.hl7.fhir.dstu3.model.Coding;
 import org.hl7.fhir.dstu3.model.Condition;
 import org.hl7.fhir.dstu3.model.ContactPoint;
 import org.hl7.fhir.dstu3.model.DateTimeType;
+import org.hl7.fhir.dstu3.model.DomainResource;
 import org.hl7.fhir.dstu3.model.Dosage;
 import org.hl7.fhir.dstu3.model.Encounter;
 import org.hl7.fhir.dstu3.model.Extension;
@@ -37,6 +38,7 @@ import org.hl7.fhir.dstu3.model.Ratio;
 import org.hl7.fhir.dstu3.model.Reference;
 import org.hl7.fhir.dstu3.model.RelatedPerson;
 import org.hl7.fhir.dstu3.model.Resource;
+import org.hl7.fhir.dstu3.model.ResourceType;
 import org.hl7.fhir.dstu3.model.SampledData;
 import org.hl7.fhir.dstu3.model.SimpleQuantity;
 import org.hl7.fhir.dstu3.model.StringType;
@@ -44,6 +46,7 @@ import org.hl7.fhir.dstu3.model.TimeType;
 import org.hl7.fhir.dstu3.model.Type;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.instance.model.api.IIdType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -73,6 +76,7 @@ public class CQLFHIR2ECRService {
 
 	Logger log = LoggerFactory.getLogger(CQLFHIR2ECRService.class);
 	FHIRFilterService fhirFilterService;
+	Bundle globalBundle;
 	IParser parser3;
 	ObjectMapper objectMapper;
 	
@@ -80,10 +84,13 @@ public class CQLFHIR2ECRService {
 		this.fhirFilterService = fhirFilterService;
 		parser3 = FhirContext.forDstu3().newJsonParser();
 		objectMapper = new ObjectMapper();
+		globalBundle = new Bundle();
 	}
 	
 	public ECR CQLFHIRResultsToECR(ArrayNode cqlResults) {
 		ECR ecr = new ECR();
+		initGlobalBundleFromResults(ecr,cqlResults);
+		
 		for(JsonNode result:cqlResults) {
 			log.debug("Result:"+result.toString());
 			if(result.get("resultType") != null) {
@@ -159,6 +166,64 @@ public class CQLFHIR2ECRService {
 			}
 		}
 		return ecr;
+	}
+	
+	public void initGlobalBundleFromResults(ECR ecr,ArrayNode cqlResults) {
+		globalBundle = new Bundle();
+		for(JsonNode result:cqlResults) {
+			log.debug("Result:"+result.toString());
+			if(result.get("resultType") != null) {
+				String resultType = result.get("resultType").asText();
+				String filteredResults = "";
+				switch(resultType) {
+				case "Patient":
+				case "Condition":
+				case "MedicationAdministration":
+				case "MedicationRequest":
+				case "MedicationStatement":
+				case "Observation":
+				case "Procedure":
+					filteredResults = fhirFilterService.applyFilter(result.get("result"),false);
+					
+					if(!filteredResults.equalsIgnoreCase("{}")) {
+						Resource resource = (Resource)parser3.parseResource(filteredResults);
+						globalBundle.addEntry(new BundleEntryComponent().setResource(resource));
+						break;
+					}
+				case "FhirBundleCursorStu3":
+				case "List":
+					String listString = result.get("result").asText();
+					log.debug("HANDLE LIST --- inputString:"+listString);
+					
+					//Check for json list. Handling only json resources.
+					if(listString.substring(0, 2).equalsIgnoreCase("[{")) {
+						ArrayNode arrayNode = null;
+						try {
+							arrayNode = (ArrayNode)objectMapper.readTree(listString);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						for(JsonNode node : arrayNode) {
+							log.debug("HANDLE LIST --- node:"+node.toString());
+							String filteredResource = fhirFilterService.applyFilter(node,true);
+							IBaseResource resource = parser3.parseResource(filteredResource);
+							globalBundle.addEntry(new BundleEntryComponent().setResource((Resource)resource));
+						}
+					}
+					/*handleList(ecr,result.get("result").asText(),result.get("name").asText());*/
+					break;
+				case "String":
+				case "StringType":
+					addStringResultByResultKey(ecr,result);
+					break;
+				case "DateTimeType":
+				case "DateTime":
+					addDateTimeResultByResultKey(ecr,result);
+					break;
+				}
+			}
+		}
 	}
 	
 	void handleList(ECR ecr,String list,String keyName) {
@@ -249,7 +314,10 @@ public class CQLFHIR2ECRService {
 		}
 		Type deceasedValue = patient.getDeceased();
 		if (deceasedValue != null && deceasedValue instanceof DateTimeType) {
-			ecr.getPatient().setdeathDate(DateUtil.dateToStdString(((DateTimeType) deceasedValue).getValue()));
+			log.debug("*~*Andrey*~* Setting deathDate from handlePatient");
+			String deathDate = DateUtil.dateToStdString(((DateTimeType) deceasedValue).getValue());
+			log.debug("*~*Andrey*~* from patient.deceased value:"+deathDate);
+			ecr.getPatient().setdeathDate(deathDate);
 		}
 		for(Extension extension:patient.getExtension()) {
 			if(extension.getUrlElement().equals("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race")) {
@@ -330,10 +398,20 @@ public class CQLFHIR2ECRService {
 		Type medicationCodeUntyped = medicationAdministration.getMedication();
 		log.info("MEDICATIONADMINISTRATION --- medication code element class: "
 				+ medicationCodeUntyped.getClass());
+		
+		CodeableConcept code  = null;
+		
 		if (medicationCodeUntyped instanceof CodeableConcept) {
-			CodeableConcept code = (CodeableConcept) medicationCodeUntyped;
-			log.info("MEDICATIONADMINISTRATION --- Trying code with this many codings: "
-					+ code.getCoding().size());
+			code = (CodeableConcept) medicationCodeUntyped;
+		} else if (medicationCodeUntyped instanceof Reference) {
+			Reference reference = (Reference) medicationCodeUntyped;
+			Medication medication = (Medication)findResourceFromReferenceInGlobalBundle(reference);
+			code = medication.getCode();
+		}
+		
+		log.info("MEDICATIONADMINISTRATION --- Trying code with this many codings: "
+				+ code.getCoding().size());
+		if(code != null) {
 			for (Coding coding : code.getCoding()) {
 				log.info("MEDICATIONADMINISTRATION --- Trying coding: " + coding.getDisplay());
 				gatech.edu.STIECR.JSON.CodeableConcept ecrConcept = FHIRCoding2ECRConcept(coding);
@@ -397,7 +475,9 @@ public class CQLFHIR2ECRService {
 		if (medicationCodeUntyped instanceof CodeableConcept) {
 			code = (CodeableConcept) medicationCodeUntyped;
 		} else if (medicationCodeUntyped instanceof Reference) {
-			code = ((Medication) ((Reference) medicationCodeUntyped).getResource()).getCode();
+			Reference reference = (Reference) medicationCodeUntyped;
+			Medication medication = (Medication)findResourceFromReferenceInGlobalBundle(reference);
+			code = medication.getCode();
 		}
 		if (code != null && !code.getCoding().isEmpty()) {
 			log.info("MEDICATIONREQUEST --- Trying coding: " + code.getCodingFirstRep().getDisplay());
@@ -805,10 +885,15 @@ public class CQLFHIR2ECRService {
 		switch(key) {
 			case "43.Encounters.Date_Of_Diagnosis":
 				ecr.getPatient().setdateOfOnset(value.toString());
+				break;
 			case "45.Patient.Death_Date":
+				log.debug("*~*Andrey*~* Setting deathDate from 45.Patient.Death_Date cql key");
+				log.debug("*~*Andrey*~* deathDate value:"+value.toString());
 				ecr.getPatient().setdeathDate(value.toString());
+				break;
 			case "46.Patient.Date_Discharged":
 				ecr.getPatient().setdateDischarged(value.toString());
+				break;
 		}
 	}
 	
@@ -852,5 +937,42 @@ public class CQLFHIR2ECRService {
 
 	public void setFhirFilterService(FHIRFilterService fhirFilterService) {
 		this.fhirFilterService = fhirFilterService;
+	}
+	
+	private Resource findResourceFromReferenceInGlobalBundle(Reference reference) {
+		String referenceString = reference.getReference();
+		String referenceId = referenceString.indexOf('/') == -1 ? referenceString : referenceString.substring(referenceString.charAt('/'));
+		for(BundleEntryComponent entry:globalBundle.getEntry()) {
+			Resource resource = entry.getResource();
+			if(resource != null && resource.getId().equalsIgnoreCase(referenceId))
+				return resource;
+		}
+		return null;
+	}
+	
+	private Resource followReference(Bundle bundle, DomainResource resource, ResourceType resourceType, Reference reference){
+		IIdType id = reference.getReferenceElement();
+		if(id.isLocal()){
+			for(Resource containedResource: resource.getContained()) {
+				if(referenceMatchesResource(resource,reference)){
+					return containedResource;
+				}
+			}
+		}
+		else {
+			for(BundleEntryComponent bec:bundle.getEntry()) {
+				Resource bundleResource = bec.getResource();
+				if(bundleResource != null && referenceMatchesResource(bundleResource,reference)) {
+					return bundleResource;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	private boolean referenceMatchesResource(Resource resource,Reference reference) {
+		IIdType id = reference.getReferenceElement();
+		return resource.getIdElement().getIdPart().equals(id.getIdPart());
 	}
 }
