@@ -78,7 +78,7 @@ public class FhirDataProviderStu3 extends BaseDataProviderStu3 {
             throw new IllegalArgumentException("A code path must be provided when filtering on codes or a valueset.");
         }
 
-        if (context != null && context.equals("Patient") && contextValue != null) {
+        if (context != null && context.equals("Patient") && contextValue != null && patientSearchableDataType(dataType)) {
             if (searchUsingPOST && search != null) {
                 search = search.where(new TokenClientParam(getPatientSearchParam(dataType)).exactly().identifier(contextValue.toString()));
                 doAnd = true;
@@ -229,5 +229,14 @@ public class FhirDataProviderStu3 extends BaseDataProviderStu3 {
         }
 
         return super.resolveProperty(target, path);
+    }
+    
+    protected boolean patientSearchableDataType(String dataType) {
+    	switch(dataType) {
+    	case "Medication":
+    		return false;
+    	default:
+    		return true;
+    	}
     }
 }
