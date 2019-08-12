@@ -47,7 +47,7 @@ public class CQLExecutionService {
 	private ObjectNode requestJson;
 	
 	public CQLExecutionService() {
-		restTemplate = new RestTemplateBuilder().setReadTimeout(Duration.ofMinutes(5)).build();
+		restTemplate = new RestTemplateBuilder().setReadTimeout(Duration.ofMinutes(10)).build();
 		objectMapper = new ObjectMapper();
 		requestJson = JsonNodeFactory.instance.objectNode();
 	}
