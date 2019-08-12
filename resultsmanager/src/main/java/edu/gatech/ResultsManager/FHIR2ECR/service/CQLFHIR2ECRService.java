@@ -466,7 +466,7 @@ public class CQLFHIR2ECRService {
 	void handleMedicationRequest(ECR ecr, MedicationRequest medicationRequest) {
 		gatech.edu.STIECR.JSON.CodeableConcept ecrCode = new gatech.edu.STIECR.JSON.CodeableConcept();
 		gatech.edu.STIECR.JSON.Medication ecrMedication = new gatech.edu.STIECR.JSON.Medication();
-		log.info("MEDICATIONREQUEST --- Trying medicationOrder: " + medicationRequest.getId());
+		log.info("MEDICATIONREQUEST --- Trying medicationRequest: " + medicationRequest.getId());
 		Type medicationCodeUntyped = medicationRequest.getMedication();
 		log.info("MEDICATIONREQUEST --- medication code element class: " + medicationCodeUntyped.getClass());
 
@@ -941,7 +941,7 @@ public class CQLFHIR2ECRService {
 	
 	private Resource findResourceFromReferenceInGlobalBundle(Reference reference) {
 		String referenceString = reference.getReference();
-		String referenceId = referenceString.indexOf('/') == -1 ? referenceString : referenceString.substring(referenceString.charAt('/'));
+		String referenceId = referenceString.indexOf('/') == -1 ? referenceString : referenceString.substring(referenceString.indexOf('/') + 1);
 		for(BundleEntryComponent entry:globalBundle.getEntry()) {
 			Resource resource = entry.getResource();
 			if(resource != null && resource.getId().equalsIgnoreCase(referenceId))
