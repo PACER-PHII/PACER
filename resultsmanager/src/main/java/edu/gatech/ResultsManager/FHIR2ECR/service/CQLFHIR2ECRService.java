@@ -477,6 +477,7 @@ public class CQLFHIR2ECRService {
 		} else if (medicationCodeUntyped instanceof Reference) {
 			Reference reference = (Reference) medicationCodeUntyped;
 			Medication medication = (Medication)findResourceFromReferenceInGlobalBundle(reference);
+			log.info("MEDICATIONREQUEST --- found medication resource: " + medicationCodeUntyped.getClass());
 			code = medication.getCode();
 		}
 		if (code != null && !code.getCoding().isEmpty()) {
@@ -940,12 +941,18 @@ public class CQLFHIR2ECRService {
 	}
 	
 	private Resource findResourceFromReferenceInGlobalBundle(Reference reference) {
+		log.info("FINDREFERENCE --- global bundle count: " + globalBundle.getEntry().size());
 		String referenceString = reference.getReference();
 		String referenceId = referenceString.indexOf('/') == -1 ? referenceString : referenceString.substring(referenceString.indexOf('/') + 1);
+		log.info("FINDREFERENCE --- referenceId: " + referenceId);
 		for(BundleEntryComponent entry:globalBundle.getEntry()) {
 			Resource resource = entry.getResource();
-			if(resource != null && resource.getId().equalsIgnoreCase(referenceId))
-				return resource;
+			if(resource != null) {
+				log.info("FINDREFERENCE --- resourceId: " + resource.getId());
+				if(resource.getId().equalsIgnoreCase(referenceId)) {
+					return resource;
+				}
+			}
 		}
 		return null;
 	}
