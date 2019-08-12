@@ -943,13 +943,12 @@ public class CQLFHIR2ECRService {
 	private Resource findResourceFromReferenceInGlobalBundle(Reference reference) {
 		log.info("FINDREFERENCE --- global bundle count: " + globalBundle.getEntry().size());
 		String referenceString = reference.getReference();
-		String referenceId = referenceString.indexOf('/') == -1 ? referenceString : referenceString.substring(referenceString.indexOf('/') + 1);
-		log.info("FINDREFERENCE --- referenceId: " + referenceId);
+		log.info("FINDREFERENCE --- referenceId: " + referenceString);
 		for(BundleEntryComponent entry:globalBundle.getEntry()) {
 			Resource resource = entry.getResource();
 			if(resource != null) {
 				log.info("FINDREFERENCE --- resourceId: " + resource.getId());
-				if(resource.getId().equalsIgnoreCase(referenceId)) {
+				if(referenceString.equalsIgnoreCase(resource.getId())) {
 					return resource;
 				}
 			}
