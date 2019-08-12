@@ -16,8 +16,7 @@ define "Chlamydia Symptoms": Concept { Code '49650001' from "sct", Code '2910007
 
 context Patient
 
-define "myFeature": 'myText'
-define "Pt": [Patient] Pt
+define "Pt": [Patient]
 define "Chlamydia Diagnosis": [Condition: Code in "Chlamydia_Codes"]
 define "19.Patient.ID": "Pt".identifier[0].value
 define "20A.Patient.Name.given": "Pt".name[0].given[0]
@@ -37,48 +36,41 @@ define "32.Patient.Pregnancy": 'TBD'
 define "33.Patient.Travel_History": 'TBD'
 define "34.Patient.Insurance_Type": 'TBD'
 define "35.Immunization.Immunization_History": [Immunization] Immunes return Immunes
-
 define "38.Condition.Date_Of_Onset": "Chlamydia Diagnosis".onset.value
 define "39.Observation.Symptoms": [Condition: Code in "Chlamydia Symptoms"]
 define "40.Lab?.LabOrderCode": 'TBD'
 define "41.Provider.Placer_Order_Number": 'TBD'
 define "42.Condition.Diagnosis": "Chlamydia Diagnosis"
-define "AllEncounters":
-  [Encounter] Encounters
-  let
-    ConditionRef: (Encounters.subject as FHIR.Reference).reference
-  where
-    "Pt".id = ConditionRef or EndsWith(ConditionRef, '/' + "Pt".id)
-  sort by start of period asc
-define "FirstEncounter": First("AllEncounters" AllEns)
-define "LastEncounter": Last("AllEncounters" AllEns)
+define "ChlamydiaEncounters": [Encounter] Encounter
+    with "42.Condition.Diagnosis" ChlamydiaDiagnosis
+    such that exists (
+      (Encounter.diagnosis.condition.reference) ref
+        where EndsWith(ref, '/' + ChlamydiaDiagnosis.id)
+    )
+define "FirstEncounter": First("ChlamydiaEncounters" AllEns)
+define "LastEncounter": Last("ChlamydiaEncounters" AllEns)
 define "43.Encounters.Date_Of_Diagnosis": "FirstEncounter".period.start.value
-define "44.Medication.MedicationProvided.1": [Medication: "Macrolides"]
-define "44.Medication.MedicationProvided.2": [Medication: "Levofloxacin"]
-define "44.Medication.MedicationProvided.3": [Medication: "Doxycycline"]
-define "44.Medication_Request.MedicationProvided.1":
-  [MedicationRequest: "Macrolides"] medRequest
-  with "44.Medication.MedicationProvided.1" meds
-  let
-    MedicationRef: (medRequest.subject as FHIR.Reference).reference
-  such that
-    meds.id = MedicationRef or EndsWith(MedicationRef, '/' + meds.id)
-define "44.Medication_Request.MedicationProvided.2":
-  [MedicationRequest: "Levofloxacin"] medRequest
-  with "44.Medication.MedicationProvided.2" meds
-  let
-    MedicationRef: (medRequest.subject as FHIR.Reference).reference
-  such that
-    meds.id = MedicationRef or EndsWith(MedicationRef, '/' + meds.id)
-
-define "44.Medication_Request.MedicationProvided.3":
-  [MedicationRequest: "Doxycycline"] medRequest
-  with "44.Medication.MedicationProvided.3" meds
-  let
-    MedicationRef: (medRequest.subject as FHIR.Reference).reference
-  such that
-    meds.id = MedicationRef or EndsWith(MedicationRef, '/' + meds.id)
-
+define "44.Medication.MedicationProvided.1": [Medication: Code in "Macrolides"]
+define "44.Medication.MedicationProvided.2": [Medication: Code in "Levofloxacin"]
+define "44.Medication.MedicationProvided.3": [Medication: Code in "Doxycycline"]
+define "44.Medication_Request.MedicationProvided.1": [MedicationRequest: "Macrolides"] medRequest
+    with "44.Medication.MedicationProvided.1" meds
+    such that exists (
+      (medRequest.medication.reference) ref
+        where EndsWith(ref, '/' + meds.id)
+    )
+define "44.Medication_Request.MedicationProvided.2": [MedicationRequest: "Levofloxacin"] medRequest
+    with "44.Medication.MedicationProvided.2" meds
+    such that exists (
+      (medRequest.medication.reference) ref
+        where EndsWith(ref, '/' + meds.id)
+    )
+define "44.Medication_Request.MedicationProvided.3": [MedicationRequest: "Doxycycline"] medRequest
+    with "44.Medication.MedicationProvided.3" meds
+    such that exists (
+      (medRequest.medication.reference) ref
+        where EndsWith(ref, '/' + meds.id)
+    )
 define "45.Patient.Death_Date": "Pt".deceased
 define "46.Encounter.Date_Discharged": "LastEncounter".period.end.value
 define "48.Condition.Trigger_Code": "Chlamydia Diagnosis".code
