@@ -863,7 +863,7 @@ public class CQLFHIR2ECRService {
 		case "31.Patient.Occupation":
 			ecr.getPatient().setoccupation(value);
 		case "32.Patient.Pregnancy":
-			ecr.getPatient().setpregnant(value.equalsIgnoreCase("false") ? false : true);
+			ecr.getPatient().setpregnant(value.equalsIgnoreCase("true") ? true : false);
 			break;
 		case "33.Patient.Travel_History":
 			ecr.getPatient().gettravelHistory().add(value);
@@ -947,7 +947,6 @@ public class CQLFHIR2ECRService {
 		for(BundleEntryComponent entry:globalBundle.getEntry()) {
 			Resource resource = entry.getResource();
 			if(resource != null) {
-				log.info("FINDREFERENCE --- resourceId: " + resource.getId());
 				if(referenceString.equalsIgnoreCase(resource.getId())) {
 					return resource;
 				}
