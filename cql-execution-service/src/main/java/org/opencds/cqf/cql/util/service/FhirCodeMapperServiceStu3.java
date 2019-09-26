@@ -42,12 +42,6 @@ public class FhirCodeMapperServiceStu3 extends BaseCodeMapperService {
 			for(ParametersParameterComponent outParam:outParams.getParameter()) {
 				if(outParam.hasName() && outParam.getName().equals("match")) {
 					for(ParametersParameterComponent matchpart:outParam.getPart()){
-						if(matchpart.hasName() && matchpart.getName().equals("equivalence")) {
-							String equivalenceValue = ((CodeType)matchpart.getValue()).primitiveValue();
-							if(!equivalenceValue.equals("equivalent")) {
-								throw new CodeMapperIncorrectEquivalenceException("Translated code expected an equivalent match but found a match of equivalence " + equivalenceValue + "instead");
-							}
-						}
 						if(matchpart.hasName() && matchpart.getName().equals("concept")) {
 							Coding coding = (Coding)matchpart.getValue();
 							Code translatedCode = new Code().withCode(coding.getCode());
