@@ -43,6 +43,7 @@ import org.hl7.fhir.dstu3.model.SampledData;
 import org.hl7.fhir.dstu3.model.SimpleQuantity;
 import org.hl7.fhir.dstu3.model.StringType;
 import org.hl7.fhir.dstu3.model.TimeType;
+import org.hl7.fhir.dstu3.model.Timing.TimingRepeatComponent;
 import org.hl7.fhir.dstu3.model.Type;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.instance.model.api.IBaseResource;
@@ -517,16 +518,21 @@ public class CQLFHIR2ECRService {
 						ecrDosage.setValue(mean.toString());
 						ecrDosage.setUnit(dosageRange.getHigh().getUnit());
 					}
+					//TODO: Handle timing when timing is code
 					if(dosageInstruction.getTiming() != null) {
-						String periodUnit = dosageInstruction.getTiming().getRepeat().getPeriodUnit().getDisplay();
-						BigDecimal period = dosageInstruction.getTiming().getRepeat().getPeriod();
-						Integer frequency = dosageInstruction.getTiming().getRepeat().getFrequency();
-						String commonFrequency= "" + frequency
-								+ " times per "
-								+ period +
-								" " +periodUnit;
-						// log.info("MEDICATIONREQUEST --- Found Frequency: " + commonFrequency);
-						ecrMedication.setFrequency(commonFrequency);
+						if(dosageInstruction.getTiming().getRepeat() != null) {
+							TimingRepeatComponent repeat = dosageInstruction.getTiming().getRepeat();
+							if(repeat.hasPeriod() && repeat.hasPeriodUnit() && repeat.hasFrequency()) {
+								String periodUnit = repeat.getPeriodUnit().getDisplay();
+								BigDecimal period = repeat.getPeriod();
+								Integer frequency = repeat.getFrequency();
+								String commonFrequency= "" + frequency
+										+ " times per "
+										+ period +
+										" " +periodUnit;
+								ecrMedication.setFrequency(commonFrequency);
+							}
+						}
 					}
 					ecrMedication.setDosage(ecrDosage);
 				}
