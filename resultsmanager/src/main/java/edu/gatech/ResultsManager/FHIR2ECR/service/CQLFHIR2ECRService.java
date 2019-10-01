@@ -535,10 +535,9 @@ public class CQLFHIR2ECRService {
 				}
 			}
 
-			Period period = medicationRequest.getDispenseRequest().getValidityPeriod();
-			if (period != null && period.getStart() != null) {
-				log.info("MEDICATIONREQUEST --- Found Validity Period: " + period.getStart().toLocaleString());
-				ecrMedication.setDate(period.getStart().toString());
+			Date authoredOn = medicationRequest.getAuthoredOn();
+			if(authoredOn != null) {
+				ecrMedication.setDate(DateUtil.dateTimeToStdString(authoredOn));
 			}
 			if (medicationRequest.getReasonCode() != null && !medicationRequest.getReasonCode().isEmpty()) {
 				handleConditionConceptCode(ecr, medicationRequest.getReasonCodeFirstRep());
@@ -946,10 +945,8 @@ public class CQLFHIR2ECRService {
 		log.info("FINDREFERENCE --- referenceId: " + referenceString);
 		for(BundleEntryComponent entry:globalBundle.getEntry()) {
 			Resource resource = entry.getResource();
-			if(resource != null) {
-				if(referenceString.equalsIgnoreCase(resource.getId())) {
-					return resource;
-				}
+			if(resource != null && referenceMatchesResource(resource,reference)) {
+				return resource;
 			}
 		}
 		return null;
@@ -972,12 +969,15 @@ public class CQLFHIR2ECRService {
 				}
 			}
 		}
-		
 		return null;
 	}
 	
 	private boolean referenceMatchesResource(Resource resource,Reference reference) {
+		log.info("REFERENCEMATCHESRESOURCE --- resourceId:"+resource.getIdElement().getIdPart());
+		log.info("REFERENCEMATCHESRESOURCE --- referenceId:"+reference.getReferenceElement().getIdPart());
+		log.info("REFERENCEMATCHESRESOURCE --- resourceResourceType:"+resource.getResourceType().toString());
+		log.info("REFERENCEMATCHESRESOURCE --- referenceResourceType:"+reference.getReferenceElement().getResourceType());
 		IIdType id = reference.getReferenceElement();
-		return resource.getIdElement().getIdPart().equals(id.getIdPart());
+		return resource.getIdElement().getIdPart().equals(id.getIdPart()) && id.getResourceType().equals(resource.getResourceType().toString());
 	}
 }
