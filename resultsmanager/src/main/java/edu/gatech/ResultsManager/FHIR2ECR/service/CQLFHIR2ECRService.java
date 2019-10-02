@@ -20,6 +20,7 @@ import org.hl7.fhir.dstu3.model.DomainResource;
 import org.hl7.fhir.dstu3.model.Dosage;
 import org.hl7.fhir.dstu3.model.Encounter;
 import org.hl7.fhir.dstu3.model.Extension;
+import org.hl7.fhir.dstu3.model.Identifier;
 import org.hl7.fhir.dstu3.model.Immunization;
 import org.hl7.fhir.dstu3.model.Medication;
 import org.hl7.fhir.dstu3.model.MedicationAdministration;
@@ -91,7 +92,6 @@ public class CQLFHIR2ECRService {
 	public ECR CQLFHIRResultsToECR(ArrayNode cqlResults) {
 		ECR ecr = new ECR();
 		initGlobalBundleFromResults(ecr,cqlResults);
-		
 		for(JsonNode result:cqlResults) {
 			log.debug("Result:"+result.toString());
 			if(result.get("resultType") != null) {
@@ -313,6 +313,15 @@ public class CQLFHIR2ECRService {
 		if(patient.getBirthDate() != null) {
 			ecr.getPatient().setbirthDate(patient.getBirthDate().toString());
 		}
+		if(patient.getIdentifier() != null && patient.getIdentifierFirstRep() != null) {
+			Identifier identifier = patient.getIdentifierFirstRep();
+			String identifierSystem = identifier.getSystem() != null ? identifier.getSystem() : "";
+			String identifierValue = identifier.getValue() != null ? identifier.getValue() : "";
+			TypeableID ecrIdentifier = new TypeableID();
+			ecrIdentifier.settype(identifierSystem);
+			ecrIdentifier.setvalue(identifierValue);
+			ecr.getPatient().getid().add(ecrIdentifier);
+		}
 		Type deceasedValue = patient.getDeceased();
 		if (deceasedValue != null && deceasedValue instanceof DateTimeType) {
 			log.debug("*~*Andrey*~* Setting deathDate from handlePatient");
@@ -371,8 +380,14 @@ public class CQLFHIR2ECRService {
 	void handlePractitioner(ECR ecr, Practitioner provider) {
 		log.info("PRACTITIONER --- ");
 		Provider ecrProvider = new Provider();
-		ecrProvider.setaddress(provider.getAddress().get(0).getText());
-		ecrProvider.setcountry(provider.getAddress().get(0).getCountry());
+		if(provider.getAddress() != null && provider.getAddressFirstRep() != null) {
+			if(provider.getAddressFirstRep().getText() != null) {
+				ecrProvider.setaddress(provider.getAddressFirstRep().getText());
+			}
+			if(provider.getAddressFirstRep().getCountry() != null) {
+				ecrProvider.setcountry(provider.getAddressFirstRep().getCountry());
+			}
+		}
 		for (ContactPoint contact : provider.getTelecom()) {
 			if (contact.getSystem().equals("Phone") && ecrProvider.getphone().isEmpty()) {
 				ecrProvider.setphone(contact.getValue());
@@ -603,15 +618,19 @@ public class CQLFHIR2ECRService {
 						ecrDosage.setUnit(dosageRange.getHigh().getUnit());
 					}
 					if(dosageInstruction.getTiming() != null) {
-						String periodUnit = dosageInstruction.getTiming().getRepeat().getPeriodUnit().getDisplay();
-						BigDecimal period = dosageInstruction.getTiming().getRepeat().getPeriod();
-						Integer frequency = dosageInstruction.getTiming().getRepeat().getFrequency();
-						String commonFrequency= "" + frequency
-								+ " times per "
-								+ period +
-								" " +periodUnit;
-						// log.info("MEDICATIONSTATEMENT --- Found Frequency: " + commonFrequency);
-						ecrMedication.setFrequency(commonFrequency);
+						if(dosageInstruction.getTiming().getRepeat() != null) {
+							TimingRepeatComponent repeat = dosageInstruction.getTiming().getRepeat();
+							if(repeat.hasPeriod() && repeat.hasPeriodUnit() && repeat.hasFrequency()) {
+								String periodUnit = repeat.getPeriodUnit().getDisplay();
+								BigDecimal period = repeat.getPeriod();
+								Integer frequency = repeat.getFrequency();
+								String commonFrequency= "" + frequency
+										+ " times per "
+										+ period +
+										" " +periodUnit;
+								ecrMedication.setFrequency(commonFrequency);
+							}
+						}
 					}
 					ecrMedication.setDosage(ecrDosage);
 				}
@@ -630,7 +649,6 @@ public class CQLFHIR2ECRService {
 			if (medicationStatement.getReasonCode() != null && !medicationStatement.getReasonCode().isEmpty()) {
 				handleConditionConceptCode(ecr, medicationStatement.getReasonCodeFirstRep());
 			}
-			
 			if (!ecr.getPatient().getMedicationProvided().contains(ecrMedication)) {
 				log.info("MEDICATIONSTATEMENT  --- Found New Entry: " + ecrCode);
 				ecr.getPatient().getMedicationProvided().add(ecrMedication);
@@ -707,6 +725,8 @@ public class CQLFHIR2ECRService {
 			log.info("CONDITION --- Trying coding: " + coding.getDisplay());
 			gatech.edu.STIECR.JSON.CodeableConcept concept = FHIRCoding2ECRConcept(coding);
 			log.info("CONDITION --- Translated to ECRconcept:" + concept.toString());
+			/* We can no longer know if a diagnosis is caught solely by logic anymore,
+			 * cql key of 42.Condition.Diagnosis is what we need to use instead.
 			if (diagnosisContainsCodeableConcept(ecr.getPatient().getDiagnosis(),concept)) {
 				log.info("CONDITION ---DIAGNOSIS MATCH!" + concept.toString());
 				Diagnosis updatedDiagnosis = new Diagnosis();
@@ -725,6 +745,7 @@ public class CQLFHIR2ECRService {
 				ecr.getPatient().getDiagnosis().add(updatedDiagnosis);
 				return;
 			}
+			*/
 		}
 		handleConditionConceptCode(ecr, code);
 		// TODO: distinguish between symptom list and diagnosis list here
@@ -832,12 +853,15 @@ public class CQLFHIR2ECRService {
 		String key = result.get("name").asText();
 		log.debug("STRING --- trying key:"+key);
 		switch(key) {
-		case "19.Patient.ID":
+		/* Find the id from the patient handler section
+		 * We don't need to handle the id solely through cql string results
+		 * case "19.Patient.ID":
 			TypeableID typeId = new TypeableID();
 			typeId.settype("fhir");
 			typeId.setvalue(value);
 			ecr.getPatient().getid().add(typeId);
 			break;
+			*/
 		case "20A.Patient.Name.given":
 			ecr.getPatient().getname().setgiven(value);
 			break;
@@ -893,11 +917,9 @@ public class CQLFHIR2ECRService {
 				ecr.getPatient().setdateOfOnset(value.toString());
 				break;
 			case "45.Patient.Death_Date":
-				log.debug("*~*Andrey*~* Setting deathDate from 45.Patient.Death_Date cql key");
-				log.debug("*~*Andrey*~* deathDate value:"+value.toString());
 				ecr.getPatient().setdeathDate(value.toString());
 				break;
-			case "46.Patient.Date_Discharged":
+			case "46.Encounter.Date_Discharged":
 				ecr.getPatient().setdateDischarged(value.toString());
 				break;
 		}
