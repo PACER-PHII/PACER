@@ -19,6 +19,7 @@ import org.hl7.fhir.dstu3.model.DateTimeType;
 import org.hl7.fhir.dstu3.model.DomainResource;
 import org.hl7.fhir.dstu3.model.Dosage;
 import org.hl7.fhir.dstu3.model.Encounter;
+import org.hl7.fhir.dstu3.model.Encounter.DiagnosisComponent;
 import org.hl7.fhir.dstu3.model.Extension;
 import org.hl7.fhir.dstu3.model.Identifier;
 import org.hl7.fhir.dstu3.model.Immunization;
@@ -213,14 +214,6 @@ public class CQLFHIR2ECRService {
 						}
 					}
 					/*handleList(ecr,result.get("result").asText(),result.get("name").asText());*/
-					break;
-				case "String":
-				case "StringType":
-					addStringResultByResultKey(ecr,result);
-					break;
-				case "DateTimeType":
-				case "DateTime":
-					addDateTimeResultByResultKey(ecr,result);
 					break;
 				}
 			}
@@ -754,12 +747,23 @@ public class CQLFHIR2ECRService {
 
 	void handleEncounter(ECR ecr, Encounter encounter) {
 		log.info("ENCOUNTER --- Trying encounter: " + encounter.getId());
-		for (CodeableConcept reason : encounter.getReason()) {
-			if(!reason.getCoding().isEmpty()) {
-				gatech.edu.STIECR.JSON.CodeableConcept concept = FHIRCoding2ECRConcept(reason.getCodingFirstRep());
-				if (!ecr.getPatient().getsymptoms().contains(concept)) {
-					ecr.getPatient()
-							.setvisitDateTime(DateUtil.dateTimeToStdString(encounter.getPeriod().getStart()));
+		if(encounter.hasReason()) {
+			for (CodeableConcept reason : encounter.getReason()) {
+				if(!reason.getCoding().isEmpty()) {
+					gatech.edu.STIECR.JSON.CodeableConcept concept = FHIRCoding2ECRConcept(reason.getCodingFirstRep());
+					if (!ecr.getPatient().getsymptoms().contains(concept)) {
+						ecr.getPatient()
+								.setvisitDateTime(DateUtil.dateTimeToStdString(encounter.getPeriod().getStart()));
+					}
+				}
+			}
+		}
+		if(encounter.hasDiagnosis()) {
+			for(DiagnosisComponent diagnosisComponent:encounter.getDiagnosis()) {
+				if(diagnosisComponent.getCondition() != null && !diagnosisComponent.isEmpty()) {
+					Condition diagnosis = (Condition) findResourceFromReferenceInGlobalBundle(diagnosisComponent.getCondition());
+					if(diagnosis.hasCode() && !diagnosis.getCode().isEmpty()) {
+					}
 				}
 			}
 		}
@@ -913,7 +917,13 @@ public class CQLFHIR2ECRService {
 		}
 		String key = result.get("name").asText();
 		switch(key) {
-			case "43.Encounters.Date_Of_Diagnosis":
+			case "36.Encounter.Admission_DateTime":
+				ecr.getPatient().setadmissionDateTime(value.toString());
+				break;
+			case "37.Encounter.Visit_DateTime":
+				ecr.getPatient().setvisitDateTime(value.toString());
+				break;
+			case "43.Encounter.Date_Of_Diagnosis":
 				ecr.getPatient().setdateOfOnset(value.toString());
 				break;
 			case "45.Patient.Death_Date":
