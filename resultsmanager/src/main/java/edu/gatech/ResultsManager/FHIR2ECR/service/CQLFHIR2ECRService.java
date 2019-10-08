@@ -762,7 +762,8 @@ public class CQLFHIR2ECRService {
 			for(DiagnosisComponent diagnosisComponent:encounter.getDiagnosis()) {
 				if(diagnosisComponent.getCondition() != null && !diagnosisComponent.isEmpty()) {
 					Condition diagnosis = (Condition) findResourceFromReferenceInGlobalBundle(diagnosisComponent.getCondition());
-					if(diagnosis.hasCode() && !diagnosis.getCode().isEmpty()) {
+					if(diagnosis != null && diagnosis.hasCode() && !diagnosis.getCode().isEmpty()) {
+						log.debug("ENCOUNTER --- Found matching diagnosis: " + diagnosis);
 					}
 				}
 			}
@@ -916,6 +917,7 @@ public class CQLFHIR2ECRService {
 			return;
 		}
 		String key = result.get("name").asText();
+		log.debug("DATETIME --- keyname:" + key);
 		switch(key) {
 			case "36.Encounter.Admission_DateTime":
 				ecr.getPatient().setadmissionDateTime(value.toString());
@@ -1011,10 +1013,6 @@ public class CQLFHIR2ECRService {
 	}
 	
 	private boolean referenceMatchesResource(Resource resource,Reference reference) {
-		log.info("REFERENCEMATCHESRESOURCE --- resourceId:"+resource.getIdElement().getIdPart());
-		log.info("REFERENCEMATCHESRESOURCE --- referenceId:"+reference.getReferenceElement().getIdPart());
-		log.info("REFERENCEMATCHESRESOURCE --- resourceResourceType:"+resource.getResourceType().toString());
-		log.info("REFERENCEMATCHESRESOURCE --- referenceResourceType:"+reference.getReferenceElement().getResourceType());
 		IIdType id = reference.getReferenceElement();
 		return resource.getIdElement().getIdPart().equals(id.getIdPart()) && id.getResourceType().equals(resource.getResourceType().toString());
 	}
