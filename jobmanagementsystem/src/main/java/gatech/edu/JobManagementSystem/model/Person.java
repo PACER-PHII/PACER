@@ -159,7 +159,7 @@ public class Person{
 	@Override
 	public String toString() {
 		return "Person [id=" + id + ", referenceId=" + referenceId + ", name=" + name + ", labOrderDate=" + labOrderDate
-				+ ", processState=" + processState + ", personList=" + personList + ", result=" + result + "]";
+				+ ", processState=" + processState + ", result=" + result + "]";
 	}
 	
 }

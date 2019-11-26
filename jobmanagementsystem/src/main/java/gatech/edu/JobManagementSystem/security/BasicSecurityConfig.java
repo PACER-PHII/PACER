@@ -38,6 +38,4 @@ public class BasicSecurityConfig extends WebSecurityConfigurerAdapter{
 	public void setBasicSecurityProperties(BasicSecurityProperties basicSecurityProperties) {
 		this.basicSecurityProperties = basicSecurityProperties;
 	}
-	 
-	 
 }
