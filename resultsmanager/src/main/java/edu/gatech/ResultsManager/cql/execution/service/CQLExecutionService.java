@@ -1,7 +1,9 @@
 package edu.gatech.ResultsManager.cql.execution.service;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.util.Date;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,12 +49,12 @@ public class CQLExecutionService {
 	private ObjectNode requestJson;
 	
 	public CQLExecutionService() {
-		restTemplate = new RestTemplateBuilder().setReadTimeout(Duration.ofMinutes(10)).build();
+		restTemplate = new RestTemplateBuilder().setReadTimeout(Duration.ofMinutes(5)).build();
 		objectMapper = new ObjectMapper();
 		requestJson = JsonNodeFactory.instance.objectNode();
 	}
 
-	public JsonNode evaluateCQL(String cqlBody, String patientId) {
+	public JsonNode evaluateCQL(String cqlBody, String patientId, Date labOrderDate) {
 		log.debug("cql body:"+cqlBody);
 		UriComponents uriComponents = UriComponentsBuilder.newInstance()
 				.scheme("http").host(endpoint).port("8080").path("/cql/evaluate").build();
@@ -69,6 +71,10 @@ public class CQLExecutionService {
 		requestJson.put("codeMapperPass", codeMapperPass);
 		requestJson.put("codeMapperSystemsMap", codeMapperSystemsMap);
 		requestJson.put("patientId", patientId);
+		if(labOrderDate != null) {
+			String labOrderDateString = new SimpleDateFormat("yyyy-MM-dd").format(labOrderDate);
+			requestJson.put("labOrderDate", labOrderDateString);
+		}
 		requestJson.put("code", cqlBody);
 		HttpEntity<String> entity = new HttpEntity<String>(requestJson.toString(), headers);
 		String cQLResultString = restTemplate.postForEntity(uriComponents.toUriString(), entity, String.class).getBody();
