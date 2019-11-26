@@ -107,7 +107,6 @@ public class Person{
 		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		result = prime * result + ((labOrderDate == null) ? 0 : labOrderDate.hashCode());
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + ((personList == null) ? 0 : personList.hashCode());
 		result = prime * result + ((processState == null) ? 0 : processState.hashCode());
 		result = prime * result + ((referenceId == null) ? 0 : referenceId.hashCode());
 		result = prime * result + ((this.result == null) ? 0 : this.result.hashCode());
@@ -136,11 +135,6 @@ public class Person{
 			if (other.name != null)
 				return false;
 		} else if (!name.equals(other.name))
-			return false;
-		if (personList == null) {
-			if (other.personList != null)
-				return false;
-		} else if (!personList.equals(other.personList))
 			return false;
 		if (processState != other.processState)
 			return false;
