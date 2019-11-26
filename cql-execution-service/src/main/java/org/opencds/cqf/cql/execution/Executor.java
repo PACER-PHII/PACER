@@ -39,7 +39,9 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.opencds.cqf.cql.data.fhir.BaseFhirDataProvider;
+import org.opencds.cqf.cql.data.fhir.FhirBundleCursorDstu2;
 import org.opencds.cqf.cql.data.fhir.FhirBundleCursorStu3;
+import org.opencds.cqf.cql.data.fhir.FhirDataProviderDstu2;
 import org.opencds.cqf.cql.data.fhir.FhirDataProviderStu3;
 import org.opencds.cqf.cql.elm.execution.CodeEvaluator;
 import org.opencds.cqf.cql.elm.execution.CodeSystemRefEvaluator;
@@ -117,13 +119,13 @@ public class Executor {
     private void registerProviders(Context context, String bearerToken, String termSvcUrl, String termUser,
                                    String termPass, String dataPvdrURL, String dataUser,
                                    String dataPass, String codeMapServiceUri, String codeMapperUser,
-                                   String codeMapperPass)
+                                   String codeMapperPass, String fhirVersion)
     {
         // TODO: plugin authorization for data provider when available
 
         String defaultEndpoint = "http://measure.eval.kanvix.com/cqf-ruler/baseDstu3";
 
-        BaseFhirDataProvider provider = new FhirDataProviderStu3();
+        BaseFhirDataProvider provider = (fhirVersion != null && fhirVersion.equalsIgnoreCase("DSTU2")) ? new FhirDataProviderDstu2() : new FhirDataProviderStu3();
         if(dataUser != null && !dataUser.isEmpty() && dataPass != null && !dataPass.isEmpty()) {
         	provider = provider.withBasicAuth(dataUser,dataPass);
         }
@@ -153,8 +155,8 @@ public class Executor {
         context.registerLibraryLoader(getLibraryLoader());
     }
 
-    private void performRetrieve(Iterable result, JSONObject results) {
-        FhirContext fhirContext = FhirContext.forDstu3(); // for JSON parsing
+    private void performRetrieve(String fhirVersion, Iterable result, JSONObject results) {
+        FhirContext fhirContext = (fhirVersion != null && fhirVersion.equalsIgnoreCase("DSTU2")) ? FhirContext.forDstu2() : FhirContext.forDstu3(); // for JSON parsing
         Iterator it = result.iterator();
         List<Object> findings = new ArrayList<>();
         while (it.hasNext()) {
@@ -276,6 +278,8 @@ public class Executor {
         json.remove("codeMapperPass");
         JSONObject codeMapperSystemsMap =  (JSONObject) json.get("codeMapperSystemsMap");
         json.remove("codeMapperSystemsMap");
+        String fhirVersion = (String) json.get("fhirVersion");
+        json.remove("fhirVersion");
 
         
         CqlTranslator translator;
@@ -308,7 +312,9 @@ public class Executor {
         Library library = translateLibrary(translator);
 
         Context context = new Context(library);
-        registerProviders(context, bearerToken, terminologyServiceUri, terminologyUser, terminologyPass, dataServiceUri, dataUser, dataPass, codeMapperServiceUri, codeMapperUser, codeMapperPass);
+        registerProviders(context, bearerToken, terminologyServiceUri, terminologyUser,
+        		terminologyPass, dataServiceUri, dataUser, dataPass, codeMapperServiceUri,
+        		codeMapperUser, codeMapperPass, fhirVersion);
 
         JSONArray resultArr = new JSONArray();
         if(library.getParameters() != null) {
@@ -377,11 +383,14 @@ public class Executor {
                     result.put("result", "Null");
                 }
                 else if (res instanceof FhirBundleCursorStu3) {
-                    performRetrieve((Iterable) res, result);
+                    performRetrieve(fhirVersion,(Iterable) res, result);
+                }
+                else if (res instanceof FhirBundleCursorDstu2) {
+                    performRetrieve(fhirVersion,(Iterable) res, result);
                 }
                 else if (res instanceof List) {
                     if (((List) res).size() > 0 && ((List) res).get(0) instanceof IBaseResource) {
-                        performRetrieve((Iterable) res, result);
+                        performRetrieve(fhirVersion,(Iterable) res, result);
                     }
                     else {
                         result.put("result", res.toString());

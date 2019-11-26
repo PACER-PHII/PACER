@@ -1,9 +1,12 @@
 package edu.gatech.ResultsManager.controller;
 
+import java.util.Date;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,10 +50,15 @@ public class ResultsManagerController{
 			@RequestParam(value =  "firstName", required = false) String firstName,
 			@RequestParam(value =  "lastName", required = false) String lastName,
 			@RequestParam(value = "identifier", required = true) String identifier,
-			@RequestParam(value = "cqlType", required = true) String cqlName){
+			@RequestParam(value = "cqlType", required = true) String cqlName,
+			@RequestParam(value = "ecrId", required = false) String ecrId,
+			@RequestParam(value = "labOrderDate", required = false) @DateTimeFormat(pattern="yyyy-MM-dd") Date labOrderDate){
 		String cqlBody = cqlStorageService.requestCQL(cqlName);
 		//ECR ecr = ecrStorageService.getECR(firstName, lastName);
 		ECR ecr = new ECR();
+		if(ecrId != null && !ecrId.isEmpty()) {
+			ecr.setECRId(ecrId);
+		}
 		String patientId;
 		try {
 			patientId = patientIdentifierService.getFhirIdByIdentifier(identifier);
@@ -59,7 +67,7 @@ public class ResultsManagerController{
 			return new ResponseEntity<ECR>(ecr,HttpStatus.UNPROCESSABLE_ENTITY);
 		}
 		log.debug("patientId:"+patientId);
-		JsonNode cqlResults = cqlExecutionService.evaluateCQL(cqlBody,patientId);
+		JsonNode cqlResults = cqlExecutionService.evaluateCQL(cqlBody,patientId,labOrderDate);
 		ECR ecrFromCQL = cqlFhir2EcrService.CQLFHIRResultsToECR((ArrayNode)cqlResults);
 		ecr.update(ecrFromCQL);
 		//ecrStorageService.storeECR(ecr.toString());

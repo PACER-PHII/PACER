@@ -9,6 +9,7 @@ import ca.uhn.fhir.model.dstu2.composite.QuantityDt;
 import ca.uhn.fhir.model.primitive.*;
 import ca.uhn.fhir.rest.gclient.IQuery;
 import org.apache.commons.lang3.EnumUtils;
+import org.hl7.fhir.dstu3.model.IdType;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.opencds.cqf.cql.runtime.Code;
 import org.opencds.cqf.cql.runtime.DateTime;
@@ -64,8 +65,11 @@ public class FhirDataProviderDstu2 extends BaseDataProviderDstu2 {
             if (params.length() > 0) {
                 params.append("&");
             }
-
-            params.append(String.format("%s=%s", getPatientSearchParam(dataType), contextValue));
+            IdType referenceId = new IdType(contextValue.toString());
+            if(!dataType.equalsIgnoreCase("Patient")) {
+            	referenceId = new IdType("Patient", contextValue.toString());
+            }
+            params.append(String.format("%s=%s", getPatientSearchParam(dataType), referenceId.toString()));
         }
 
         if (codePath != null && !codePath.equals("")) {

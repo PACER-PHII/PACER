@@ -1,5 +1,6 @@
 package gatech.edu.JobManagementSystem.model;
 
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -13,6 +14,8 @@ import javax.persistence.Id;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -27,6 +30,9 @@ public class Person{
 	private String referenceId;
 	@Column(name = "name")
 	private String name;
+	@Column(name = "labOrderDate")
+	@Temporal(TemporalType.DATE)
+	private Date labOrderDate;
 	@Column(name = "processState")
 	private PersonProcessState processState = PersonProcessState.NONE;
 	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
@@ -53,6 +59,12 @@ public class Person{
 	}
 	public void setName(String name) {
 		this.name = name;
+	}
+	public Date getLabOrderDate() {
+		return labOrderDate;
+	}
+	public void setLabOrderDate(Date labOrderDate) {
+		this.labOrderDate = labOrderDate;
 	}
 	public PersonProcessState getProcessState() {
 		return processState;
@@ -92,8 +104,13 @@ public class Person{
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		result = prime * result + ((labOrderDate == null) ? 0 : labOrderDate.hashCode());
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((personList == null) ? 0 : personList.hashCode());
+		result = prime * result + ((processState == null) ? 0 : processState.hashCode());
 		result = prime * result + ((referenceId == null) ? 0 : referenceId.hashCode());
+		result = prime * result + ((this.result == null) ? 0 : this.result.hashCode());
 		return result;
 	}
 	@Override
@@ -105,21 +122,44 @@ public class Person{
 		if (getClass() != obj.getClass())
 			return false;
 		Person other = (Person) obj;
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		} else if (!id.equals(other.id))
+			return false;
+		if (labOrderDate == null) {
+			if (other.labOrderDate != null)
+				return false;
+		} else if (!labOrderDate.equals(other.labOrderDate))
+			return false;
 		if (name == null) {
 			if (other.name != null)
 				return false;
 		} else if (!name.equals(other.name))
+			return false;
+		if (personList == null) {
+			if (other.personList != null)
+				return false;
+		} else if (!personList.equals(other.personList))
+			return false;
+		if (processState != other.processState)
 			return false;
 		if (referenceId == null) {
 			if (other.referenceId != null)
 				return false;
 		} else if (!referenceId.equals(other.referenceId))
 			return false;
+		if (result == null) {
+			if (other.result != null)
+				return false;
+		} else if (!result.equals(other.result))
+			return false;
 		return true;
 	}
 	@Override
 	public String toString() {
-		return "Person [id=" + id + ", referenceId=" + referenceId + ", name=" + name + ", processState=" + processState
-				+ ", result=" + result + "]";
+		return "Person [id=" + id + ", referenceId=" + referenceId + ", name=" + name + ", labOrderDate=" + labOrderDate
+				+ ", processState=" + processState + ", personList=" + personList + ", result=" + result + "]";
 	}
+	
 }

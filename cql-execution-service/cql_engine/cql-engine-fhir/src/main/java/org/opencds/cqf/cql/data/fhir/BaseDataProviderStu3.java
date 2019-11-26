@@ -457,4 +457,19 @@ public class BaseDataProviderStu3 extends BaseFhirDataProvider {
 
         return typeName;
     }
+    
+ // Retrieval helpers
+    protected String getPatientSearchParam(String dataType) {
+        switch (dataType) {
+            case "Coverage":
+                return "beneficiary";
+            case "Patient":
+                return "_id";
+            case "RiskAssessment":
+            case "Procedure":
+                return "subject";
+                
+            default: return "patient";
+        }
+    }
 }

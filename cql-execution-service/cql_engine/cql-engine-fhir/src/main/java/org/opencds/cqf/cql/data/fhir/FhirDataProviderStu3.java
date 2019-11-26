@@ -80,15 +80,20 @@ public class FhirDataProviderStu3 extends BaseDataProviderStu3 {
 
         if (context != null && context.equals("Patient") && contextValue != null && patientSearchableDataType(dataType)) {
             if (searchUsingPOST && search != null) {
-                search = search.where(new TokenClientParam(getPatientSearchParam(dataType)).exactly().identifier(contextValue.toString()));
+            	
+                search = search.where(new TokenClientParam(getPatientSearchParam(dataType)).exactly().identifier("Patient/"+contextValue.toString()));
                 doAnd = true;
             }
             else {
                 if (params.length() > 0) {
                     params.append("&");
                 }
-
-                params.append(String.format("%s=%s", getPatientSearchParam(dataType), URLEncode((String) contextValue)));
+                String referenceString = (String)contextValue;
+                String patientSearchParam = getPatientSearchParam(dataType);
+                if(!dataType.equalsIgnoreCase("Patient") && !patientSearchParam.equalsIgnoreCase("patient")) {
+                	referenceString = "Patient/"+ (String)contextValue;
+                }
+                params.append(String.format("%s=%s", getPatientSearchParam(dataType), URLEncode(referenceString)));
             }
         }
 

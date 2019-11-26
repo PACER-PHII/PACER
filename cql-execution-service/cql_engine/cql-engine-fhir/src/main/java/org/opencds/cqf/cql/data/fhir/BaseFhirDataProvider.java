@@ -15,8 +15,6 @@ import org.opencds.cqf.cql.runtime.DateTime;
 import org.opencds.cqf.cql.runtime.Interval;
 import org.opencds.cqf.cql.runtime.Precision;
 import org.opencds.cqf.cql.terminology.TerminologyProvider;
-import org.opencds.cqf.cql.terminology.fhir.FhirTerminologyProvider;
-
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -62,6 +60,7 @@ public abstract class BaseFhirDataProvider implements DataProvider {
             BasicAuthInterceptor basicAuth = new BasicAuthInterceptor(userName, password);
             fhirClient.registerInterceptor(basicAuth);
         }
+        
         if(bearerToken != null) {
         	BearerTokenAuthInterceptor bearerAuth = new BearerTokenAuthInterceptor(bearerToken);
         	fhirClient.registerInterceptor(bearerAuth);
@@ -87,7 +86,6 @@ public abstract class BaseFhirDataProvider implements DataProvider {
         this.bearerToken = bearerToken;
         return this;
     }
-    
     public boolean isExpandValueSets() {
         return expandValueSets;
     }

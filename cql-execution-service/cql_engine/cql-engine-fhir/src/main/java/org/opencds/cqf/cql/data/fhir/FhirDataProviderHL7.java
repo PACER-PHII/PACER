@@ -2,6 +2,8 @@ package org.opencds.cqf.cql.data.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.gclient.IQuery;
+
+import org.hl7.fhir.dstu3.model.IdType;
 import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.opencds.cqf.cql.runtime.*;
@@ -65,8 +67,11 @@ public class FhirDataProviderHL7 extends FhirDataProviderStu3 {
             if (params.length() > 0) {
                 params.append("&");
             }
-
-            params.append(String.format("%s=%s", getPatientSearchParam(dataType), URLEncode((String)contextValue)));
+            IdType referenceId = new IdType(contextValue.toString());
+            if(!dataType.equalsIgnoreCase("Patient")) {
+            	referenceId = new IdType("Patient", contextValue.toString());
+            }
+            params.append(String.format("%s=%s", getPatientSearchParam(dataType), URLEncode(referenceId.toString())));
         }
 
         if (codePath != null && !codePath.equals("")) {

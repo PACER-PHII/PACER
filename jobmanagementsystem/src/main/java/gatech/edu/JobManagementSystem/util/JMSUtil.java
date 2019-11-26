@@ -1,5 +1,7 @@
 package gatech.edu.JobManagementSystem.util;
 
+import java.text.SimpleDateFormat;
+
 import gatech.edu.JobManagementSystem.model.Action;
 import gatech.edu.JobManagementSystem.model.ActionType;
 import gatech.edu.JobManagementSystem.model.Person;
@@ -14,7 +16,7 @@ public class JMSUtil {
 			action = new RestAction();
 			action.setName("Post to resultsmanager to update the ECR with FHIR data");
 			action.setCronString("* * 8 * * *");
-			action.addParam("endpoint","http://results-manager:8080/ResultsManager/case?identifier=${person.id}&firstName=${person.firstName}&lastName=${person.lastName}&cqlType=${list.jobType}");
+			action.addParam("endpoint","http://results-manager:8080/ResultsManager/case?identifier=${person.id}&firstName=${person.firstName}&lastName=${person.lastName}&cqlType=${list.jobType}&labOrderDate=${person.labOrderDate}");
 			action.addParam("operation","POST");
 			action.addParam("body","");
 			personList.setAction(action);
@@ -53,6 +55,9 @@ public class JMSUtil {
 		}
 		if(action.getPersonList().getName() != null) {
 			inputString = inputString.replaceAll("\\$\\{list.name\\}", action.getPersonList().getName());
+		}
+		if(person.getLabOrderDate() != null) {
+			inputString = inputString.replaceAll("\\$\\{person.labOrderDate\\}", new SimpleDateFormat("yyyy-MM-dd").format(person.getLabOrderDate()));
 		}
 		return inputString;
 	}
