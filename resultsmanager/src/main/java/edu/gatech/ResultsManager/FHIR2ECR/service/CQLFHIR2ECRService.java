@@ -1014,6 +1014,9 @@ public class CQLFHIR2ECRService {
 	
 	private boolean referenceMatchesResource(Resource resource,Reference reference) {
 		IIdType id = reference.getReferenceElement();
+		if (id == null) {
+			return false;
+		}
 		return resource.getIdElement().getIdPart().equals(id.getIdPart()) && id.getResourceType().equals(resource.getResourceType().toString());
 	}
 }
