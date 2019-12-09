@@ -57,11 +57,12 @@ public class FHIRFilterService {
 			//BAD HACK TO GET AROUND VALUE STRING WRAPPING
 			rawFhir = rawFhir.substring(1, rawFhir.length()-1);
 		}
-		log.debug("rawFhir after escaping characters:"+rawFhir);
+		log.debug("fhir resource before filter:"+rawFhir);
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
 		HttpEntity<String> entity = new HttpEntity<String>(rawFhir, headers);
 		String filteredResult = restTemplate.postForEntity(uriComponents.toUriString(), entity, String.class).getBody();
+		log.debug("fhir resource after filter:"+filteredResult);
 		return filteredResult;
 	}
 	
