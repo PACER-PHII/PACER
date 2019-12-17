@@ -1,0 +1,18 @@
+[submodule "nginx-cache"]
+	path = nginx-cache
+	url = https://github.com/gt-health/nginx-cache.git
+[submodule "ResultsManager"]
+	path = ResultsManager
+	url = https://github.com/gt-health/ResultsManager.git
+[submodule "JobManagementSystem"]
+	path = JobManagementSystem
+	url = https://github.com/gt-health/JobManagementSystem.git
+[submodule "db"]
+	path = db
+	url = https://github.com/gt-health/PACER-db.git
+[submodule "CQLStorage"]
+	path = CQLStorage
+	url = https://github.com/gt-health/CQLStorage.git
+[submodule "CQLValueSetExpander"]
+	path = CQLValueSetExpander
+	url = https://github.com/gt-health/CQLValueSetExpander.git
