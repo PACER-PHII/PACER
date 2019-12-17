@@ -1,1 +1,0 @@
-This project is the list management system. It requires a patientList, and an attached action with a crontab string. It runs the Designated action on a scheduled crontime and reports the results in the patientList.
