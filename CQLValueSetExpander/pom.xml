@@ -12,7 +12,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jackson_version>2.9.10.3</jackson_version>
+    <jackson_version>2.9.10.4</jackson_version>
     <hapi_version>3.8.0</hapi_version>
     <apache_http_version>4.5.8</apache_http_version>
   </properties>
