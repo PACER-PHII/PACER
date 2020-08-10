@@ -66,7 +66,7 @@ services:
       context: ./resultsmanager
     environment:
       #Change to fhir data provider within the internal EHR
-      CQL_EXECUTION_DATA_SERVICE: "https://apps.hdap.gatech.edu/gt-fhir/fhir/"
+      CQL_EXECUTION_DATA_SERVICE: "${CQL_EXECUTION_DATA_SERVICE:-https://apps.hdap.gatech.edu/gt-fhir/fhir/}"
       #Basic authentication credentials to the data service
       CQL_EXECUTION_DATA_USER: ""
       CQL_EXECUTION_DATA_PASS: ""
