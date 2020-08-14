@@ -5,7 +5,7 @@ ADD . .
 RUN mvn clean install -DskipTests -f /usr/src/cql_src/cql_engine/
 RUN mvn clean install -DskipTests -f /usr/src/cql_src
 
-FROM tomcat:latest
+FROM tomcat:10-jdk8
 #move the WAR for contesa to the webapps directory
 COPY --from=builder /usr/src/cql_src/target/CQLExecSvc-1.0-SNAPSHOT.war /usr/local/tomcat/webapps/cql.war
 COPY --from=builder /usr/src/cql_src/src/main/resources/* /usr/local/tomcat/src/main/resources/

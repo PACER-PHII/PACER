@@ -1014,15 +1014,8 @@ public class CQLFHIR2ECRService {
 	
 	private boolean referenceMatchesResource(Resource resource,Reference reference) {
 		IIdType id = reference.getReferenceElement();
-		log.debug("REFERENCEMATCHESRESOURCE --- Resource:" + resource);
-		log.debug("REFERENCEMATCHESRESOURCE --- Reference:" + reference);
-		log.debug("REFERENCEMATCHESRESOURCE --- Reference.getReferenceElement:" + id);
-		log.debug("REFERENCEMATCHESRESOURCE --- Reference.getReferenceElement.getIdPart:" + id.getIdPart());
-		log.debug("REFERENCEMATCHESRESOURCE --- Resource.getIdElement:" + resource.getIdElement());
-		log.debug("REFERENCEMATCHESRESOURCE --- Resource.getIdElement.getIdPart:" + resource.getIdElement().getIdPart());
-		log.debug("REFERENCEMATCHESRESOURCE --- Reference.getReferenceElement.getResourceType:" + id.getResourceType());
-		log.debug("REFERENCEMATCHESRESOURCE --- Resource.getResourceType():" + resource.getResourceType().toString());
-		if (id == null || resource.getIdElement() == null) {
+		if (id == null || resource.getIdElement().getIdPart() == null) {
+			log.debug("REFERENCEMATCHESRESOURCE --- null check succeeded");
 			return false;
 		}
 		return resource.getIdElement().getIdPart().equals(id.getIdPart()) && id.getResourceType().equals(resource.getResourceType().toString());
