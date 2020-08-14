@@ -21,7 +21,7 @@
    	<maven.compiler.target>1.7</maven.compiler.target>		
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <tomcat.version>8.0.45</tomcat.version>
-    <fhir.version>3.2.0</fhir.version>
+    <fhir.version>4.1.0</fhir.version>
   </properties>
 
   <dependencies>
