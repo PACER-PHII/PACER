@@ -47,7 +47,7 @@ services:
       JDBC_PASSWORD: "postgres"
       BASIC_USERNAME: "username"
       BASIC_PASSWORD: "password"
-    command: ["./wait-for-it.sh", "db:5432", "--timeout=300", "--" ,"catalina.sh", "run"]
+    command: ["./wait-for-it.sh", "db:5432", "--timeout=300", "--" ,"java","-jar", "/usr/src/app/JobManagementSystem.jar"]
 
   nginx-cache:
     depends_on:
@@ -64,12 +64,14 @@ services:
       - cql-storage
     build:
       context: ./resultsmanager
+    ports:
+      - "8084:8080"
     environment:
       #Change to fhir data provider within the internal EHR
-      CQL_EXECUTION_DATA_SERVICE: "https://apps.hdap.gatech.edu/gt-fhir/fhir/"
+      CQL_EXECUTION_DATA_SERVICE: "https://apps.hdap.gatech.edu/gt-fhir/fhir"
       #Basic authentication credentials to the data service
-      CQL_EXECUTION_DATA_USER: ""
-      CQL_EXECUTION_DATA_PASS: ""
+      CQL_EXECUTION_DATA_USER: "client"
+      CQL_EXECUTION_DATA_PASS: "secret"
       #Change if you want to use a seperate terminology service
       CQL_EXECUTION_TERMINOLOGY_SERVICE: "https://cts.nlm.nih.gov/fhir/"
       #Authorization credentials to the terminology service
@@ -77,12 +79,13 @@ services:
       CQL_EXECUTION_CODEMAPPER_SERVICE: "http://nginx-cache:8080/fhir/"
       CQL_EXECUTION_CODEMAPPER_USER: "client" #Update to your translate server credentials
       CQL_EXECUTION_CODEMAPPER_PASS: "secret" #Update to your translate server credentials
-      CQL_EXECUTION_CODEMAPPER_SYSTEMS_MAP: '{"http://www.nlm.nih.gov/research/umls/rxnorm":"http://hl7.org/fhir/ndfrt"}'
-      CQL_EXECUTION_TERMINOLOGY_USER: "" #Update to your terminology credentials
-      CQL_EXECUTION_TERMINOLOGY_PASS: "" #Update to your terminology credentials
+      CQL_EXECUTION_CODEMAPPER_SYSTEMS_MAP: '{}'#'{"http://www.nlm.nih.gov/research/umls/rxnorm":"http://hl7.org/fhir/ndfrt"}'
+      CQL_EXECUTION_TERMINOLOGY_USER: "jduke99" #Update to your terminology credentials
+      CQL_EXECUTION_TERMINOLOGY_PASS: "v6R4*SsU39" #Update to your terminology credentials
       CQL_EXECUTION_URL: "cql-execution"
       CQL_STORAGE_URL: "cql-storage"
-      FHIR_FILTER_URL: "fhir-filter"
+      FHIR_FILTER_URL: "apps.hdap.gatech.edu"
+
   translateconcept:
     depends_on:
       - db
@@ -100,3 +103,8 @@ services:
       AUTH_TYPE: "Basic client:secret" #Update to local translate service basic credentials
       MAPPING_TERMINOLOGY_URL: "https://apps.hdap.gatech.edu/gt-fhir/fhir/ConceptMap/" #Update to local translate service
     command: ["./wait-for-it.sh", "db:5432", "--timeout=300", "--" ,"catalina.sh", "run"]
+
+networks:
+  default:
+    external:
+      name: pacer_default

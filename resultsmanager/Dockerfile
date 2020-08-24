@@ -1,10 +1,16 @@
-FROM maven:3.6.0-jdk-8 AS builder
-WORKDIR /usr/src/resultsmanager_src
+#Use the maven as "builder" and then use builder to share an artifact to the real tomcat service
+FROM maven:3.5.4-jdk-8 as builder
+MAINTAINER Mike Riley "michael.riley@gtri.gatech.edu"
+WORKDIR /usr/src/app
 ADD . .
-RUN mvn clean install -DskipTests -f /usr/src/resultsmanager_src/ecr_javalib
-RUN mvn clean install -DskipTests -f /usr/src/resultsmanager_src/
+RUN mvn install -DskipTests -f /usr/src/app/ecr_javalib/
+RUN mvn package -DskipTests -f /usr/src/app/
 
-FROM tomcat:10-jdk8
+
+FROM java:8-jdk
 #move the WAR for contesa to the webapps directory
-COPY --from=builder /usr/src/resultsmanager_src/target/ResultsManager-0.0.1-SNAPSHOT.war /usr/local/tomcat/webapps/ResultsManager.war
-COPY --from=builder /usr/src/resultsmanager_src/src/main/resources/* /usr/local/tomcat/src/main/resources/
+COPY --from=builder /usr/src/app/target/ResultsManager-0.0.1-SNAPSHOT.jar /usr/src/app/ResultsManager.jar
+WORKDIR /usr/src/app
+EXPOSE 8080
+#CMD ["tail", "-f", "/dev/nulljava"]
+CMD ["java", "-jar", "/usr/src/app/ResultsManager.jar"]

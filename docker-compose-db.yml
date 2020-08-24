@@ -1,0 +1,9 @@
+version: '3'
+services:
+  db:
+    build:
+     context: ./db
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "db"
