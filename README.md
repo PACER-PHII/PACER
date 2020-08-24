@@ -10,7 +10,7 @@ Software requirements
 
 ## Configuring PACER for your environment
 Before installing PACER you need to configure a few entries in order to point PACER to your data sources.
-In the ```docker-compose.yml``` file...
+In the ```docker-compose-apps.yml``` file...
 * Update the ```CQL_EXECUTION_DATA_SERVICE``` to point to your base FHIR URL.
 * If you have a FHIR terminology service, or if you rown FHIR server acts as a terminology service, update the ```CQL_EXECUTION_TERMINOLOGY_SERVICE``` to a different base FHIR URL.
 * Additionally, if you choose to use a seperate terminology service, you must either update or remove the ```CQL_EXECUTION_TERMINOLOGY_USER``` and ```CQL_EXECUTION_TERMINOLOGY_PASS``` credentials
@@ -19,5 +19,6 @@ In the ```docker-compose.yml``` file...
   * Finally, you must also update the ```CQL_EXECUTION_CODEMAPPER_USER``` and ```CQL_EXECUTION_CODEMAPPER_PASS``` to the basic credentials as well.
   * In order to define the actual mapping, you must create a new flat-key json object in the ```CQL_EXECUTION_CODEMAPPER_SYSTEMS_MAP``` variable. Each key is a source system, and each value is the target system by which it will be mapped too. In the example, *http://www.nlm.nih.gov/research/umls/rxnorm* is the **source** and *http://hl7.org/fhir/ndfrt* is the **target**.
 ## Installation Instructions
-* From the command line, run ```docker-compose build``` from the top of the project. This will build from the source folders deployable images for 6 different containers: cql-storage, cql-execution, db, fhir-filter, job-management-system, results-manager.
-* From the command line, run ```docker-compose up -d``` This will turn on all the components and detach the process from the command line.
+* Pacer consists of 2 seperate docker-compose files: ```docker-compose-db.yml``` and ```docker-compose-apps.yml```. ```docker-compose-db.yml``` contains the configuration information for the database, and should be built and ran first before the ```docker-compose-apps.yml``` script. ```docker-compose-apps.yml``` consist of the application components that manage the PACER workflow.
+* From the command line, run ```docker-compose -f docker-compose-db.yml``` and ```docker-compose -f docker-compose-apps.yml``` from the top of the project. This will build from the source folders deployable images for 6 different containers: cql-storage, cql-execution, db, fhir-filter, job-management-system, results-manager.
+* From the command line, run ```docker-compose -f docker-compose-db.yml up -d```, and wait for the database service to complete it's initdb.script. Once that is completed, run ```docker-compose -f docker-compose-apps.yml up -d``` This will turn on all the applications components and detach the process from the command line.
