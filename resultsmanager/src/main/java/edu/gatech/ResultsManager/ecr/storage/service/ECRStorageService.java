@@ -39,7 +39,7 @@ public class ECRStorageService {
 	
 	public ECR getECR(String firstName,String lastName) {
 		UriComponents uriComponents = UriComponentsBuilder.newInstance()
-				.scheme("http").host(endpoint).port("80").path("/ECR").queryParam("firstName", firstName).queryParam("lastName", lastName).build();
+				.scheme("https").host(endpoint).port("443").path("/ECR").queryParam("firstName", firstName).queryParam("lastName", lastName).build();
 		List<ECR> ecrList = restTemplate.getForEntity(uriComponents.toUriString(), List.class).getBody();
 		return ecrList.get(0);
 	}

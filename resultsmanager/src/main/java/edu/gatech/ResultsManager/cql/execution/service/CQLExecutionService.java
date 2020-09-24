@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,9 +57,8 @@ public class CQLExecutionService {
 	}
 
 	public JsonNode evaluateCQL(String cqlBody, String patientId, Date labOrderDate) {
-		log.debug("cql body:"+cqlBody);
 		UriComponents uriComponents = UriComponentsBuilder.newInstance()
-				.scheme("http").host(endpoint).port("8080").path("/cql/evaluate").build();
+				.scheme("https").host(endpoint).port("443").path("/cql/evaluate").build();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		requestJson.put("terminologyServiceUri", terminologyServiceUri);
@@ -77,6 +78,12 @@ public class CQLExecutionService {
 		}
 		requestJson.put("code", cqlBody);
 		HttpEntity<String> entity = new HttpEntity<String>(requestJson.toString(), headers);
+		log.debug("*-* requesting cql execution at:"+uriComponents.toUriString());
+		for(Iterator<Entry<String, JsonNode>> jsonFields = requestJson.fields();
+			    jsonFields.hasNext();) {
+			Entry<String, JsonNode> keyValue = jsonFields.next();
+			log.debug("*-* cql execution request param: " + keyValue.getKey() + ":::" + keyValue.getValue().asText());
+		}
 		String cQLResultString = restTemplate.postForEntity(uriComponents.toUriString(), entity, String.class).getBody();
 		JsonNode resultsJson = null;
 		try {

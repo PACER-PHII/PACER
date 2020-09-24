@@ -2,6 +2,8 @@ package edu.gatech.ResultsManager.cql.storage.service;
 
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -14,11 +16,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import edu.gatech.ResultsManager.controller.ResultsManagerController;
+
 @Service
 @Configuration
 @ConfigurationProperties(prefix="cql.storage")
 @Primary
 public class CQLStorageService {
+	Logger log = LoggerFactory.getLogger(CQLStorageService.class);
+	
 	private String endpoint;
 	private RestTemplate restTemplate;
 	private ObjectMapper objectMapper;
@@ -30,7 +36,8 @@ public class CQLStorageService {
 
 	public String requestCQL(String cqlName) {
 		UriComponents uriComponents = UriComponentsBuilder.newInstance()
-				.scheme("http").host(endpoint).port("8080").path("/CQLStorage/CQL").queryParam("name", cqlName).build();
+				.scheme("https").host(endpoint).port("443").path("/CQLStorage/CQL").queryParam("name", cqlName).build();
+		log.debug("*-* requesting to cql storage service at:" + uriComponents.toUriString());
 		String responseString = restTemplate.getForEntity(uriComponents.toUriString(), String.class).getBody();
 		ObjectNode responseObject = null;
 		try {

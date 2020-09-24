@@ -47,13 +47,20 @@ public class ResultsManagerController{
 	
 	@RequestMapping(value = "/case", method = RequestMethod.POST)
 	public ResponseEntity<ECR> pacerFlow(
-			@RequestParam(value =  "firstName", required = false) String firstName,
-			@RequestParam(value =  "lastName", required = false) String lastName,
-			@RequestParam(value = "identifier", required = true) String identifier,
-			@RequestParam(value = "cqlType", required = true) String cqlName,
-			@RequestParam(value = "ecrId", required = false) String ecrId,
-			@RequestParam(value = "labOrderDate", required = false) @DateTimeFormat(pattern="yyyy-MM-dd") Date labOrderDate){
-		String cqlBody = cqlStorageService.requestCQL(cqlName);
+			@RequestParam(value =  "firstName", required = false, defaultValue = "") String firstName,
+			@RequestParam(value =  "lastName", required = false, defaultValue = "") String lastName,
+			@RequestParam(value = "identifier", required = true, defaultValue = "") String identifier,
+			@RequestParam(value = "cqlType", required = true, defaultValue = "") String cqlType,
+			@RequestParam(value = "ecrId", required = false, defaultValue = "") String ecrId,
+			@RequestParam(value = "labOrderDate", required = false, defaultValue = "1970-01-01") @DateTimeFormat(pattern="yyyy-MM-dd") Date labOrderDate){
+		log.debug("*-* Received POST request on /case");
+		log.debug("*-* Request param firstName:" + firstName);
+		log.debug("*-* Request param lastName:" + lastName);
+		log.debug("*-* Request param identifier:" + identifier);
+		log.debug("*-* Request param cqlType:" + cqlType);
+		log.debug("*-* Request param ecrId:" + ecrId);
+		log.debug("*-* Request param labOrderName:" + labOrderDate);
+		String cqlBody = cqlStorageService.requestCQL(cqlType);
 		//ECR ecr = ecrStorageService.getECR(firstName, lastName);
 		ECR ecr = new ECR();
 		if(ecrId != null && !ecrId.isEmpty()) {
@@ -66,7 +73,7 @@ public class ResultsManagerController{
 			log.error(e.getMessage());
 			return new ResponseEntity<ECR>(ecr,HttpStatus.UNPROCESSABLE_ENTITY);
 		}
-		log.debug("patientId:"+patientId);
+		log.debug("patientId from patientIdentifierServer:"+patientId);
 		JsonNode cqlResults = cqlExecutionService.evaluateCQL(cqlBody,patientId,labOrderDate);
 		ECR ecrFromCQL = cqlFhir2EcrService.CQLFHIRResultsToECR((ArrayNode)cqlResults);
 		ecr.update(ecrFromCQL);
