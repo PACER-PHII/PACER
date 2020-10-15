@@ -58,7 +58,7 @@ public class CQLExecutionService {
 
 	public JsonNode evaluateCQL(String cqlBody, String patientId, Date labOrderDate) {
 		UriComponents uriComponents = UriComponentsBuilder.newInstance()
-				.scheme("https").host(endpoint).port("443").path("/cql/evaluate").build();
+				.scheme("http").host(endpoint).port("8080").path("/cql/evaluate").build();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		requestJson.put("terminologyServiceUri", terminologyServiceUri);

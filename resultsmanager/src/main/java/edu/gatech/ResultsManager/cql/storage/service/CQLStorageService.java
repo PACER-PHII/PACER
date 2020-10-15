@@ -36,7 +36,7 @@ public class CQLStorageService {
 
 	public String requestCQL(String cqlName) {
 		UriComponents uriComponents = UriComponentsBuilder.newInstance()
-				.scheme("https").host(endpoint).port("443").path("/CQLStorage/CQL").queryParam("name", cqlName).build();
+				.scheme("http").host(endpoint).port("8080").path("/CQLStorage/CQL").queryParam("name", cqlName).build();
 		log.debug("*-* requesting to cql storage service at:" + uriComponents.toUriString());
 		String responseString = restTemplate.getForEntity(uriComponents.toUriString(), String.class).getBody();
 		ObjectNode responseObject = null;

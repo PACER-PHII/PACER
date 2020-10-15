@@ -32,14 +32,14 @@ public class ECRStorageService {
 
 	public String storeECR(String ecrBody) {
 		UriComponents uriComponents = UriComponentsBuilder.newInstance()
-				.scheme("https").host(endpoint).port("443").path("/ECR").build();
+				.scheme("http").host(endpoint).port("8080").path("/ECR").build();
 		String cqlString = restTemplate.postForEntity(uriComponents.toUriString(), ecrBody, String.class).getBody();
 		return cqlString;
 	}
 	
 	public ECR getECR(String firstName,String lastName) {
 		UriComponents uriComponents = UriComponentsBuilder.newInstance()
-				.scheme("https").host(endpoint).port("443").path("/ECR").queryParam("firstName", firstName).queryParam("lastName", lastName).build();
+				.scheme("http").host(endpoint).port("8080").path("/ECR").queryParam("firstName", firstName).queryParam("lastName", lastName).build();
 		List<ECR> ecrList = restTemplate.getForEntity(uriComponents.toUriString(), List.class).getBody();
 		return ecrList.get(0);
 	}
