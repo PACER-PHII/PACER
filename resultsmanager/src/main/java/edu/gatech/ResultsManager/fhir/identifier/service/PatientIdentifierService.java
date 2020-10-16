@@ -13,6 +13,7 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.base.composite.BaseIdentifierDt;
 import ca.uhn.fhir.model.dstu2.composite.IdentifierDt;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.client.interceptor.AdditionalRequestHeadersInterceptor;
 import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
 import edu.gatech.ResultsManager.controller.ResultsManagerController;
@@ -26,6 +27,7 @@ public class PatientIdentifierService {
 	private String dataServiceUri;
 	private String dataUser;
 	private String dataPass;
+	private String epicClientId;
 	private IGenericClient client;
 	private FhirContext ctx;
 	public PatientIdentifierService() {
@@ -38,6 +40,11 @@ public class PatientIdentifierService {
 		BaseIdentifierDt identifierObject = createIDFromString(identifier);
 		if(dataUser != null && !dataUser.isEmpty() && dataPass != null && !dataPass.isEmpty()) {
 			client.registerInterceptor(new BasicAuthInterceptor(dataUser,dataPass));
+		}
+		if(epicClientId != null && !epicClientId.isEmpty()) {
+			AdditionalRequestHeadersInterceptor interceptor = new AdditionalRequestHeadersInterceptor();
+			interceptor.addHeaderValue("Epic-Client-Id", epicClientId);
+			client.registerInterceptor(interceptor);
 		}
 		Bundle results = client
 				.search()
@@ -73,6 +80,14 @@ public class PatientIdentifierService {
 
 	public void setDataPass(String dataPass) {
 		this.dataPass = dataPass;
+	}
+
+	public String getEpicClientId() {
+		return epicClientId;
+	}
+
+	public void setEpicClientId(String epicClientId) {
+		this.epicClientId = epicClientId;
 	}
 	
 	public BaseIdentifierDt createIDFromString(String input) {

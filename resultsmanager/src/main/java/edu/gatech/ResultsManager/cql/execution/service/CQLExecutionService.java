@@ -46,6 +46,7 @@ public class CQLExecutionService {
 	private String codeMapperUser;
 	private String codeMapperPass;
 	private ObjectNode codeMapperSystemsMap;
+	private String epicClientId;
 	private RestTemplate restTemplate;
 	private ObjectMapper objectMapper;
 	private ObjectNode requestJson;
@@ -61,6 +62,9 @@ public class CQLExecutionService {
 				.scheme("http").host(endpoint).port("8080").path("/cql/evaluate").build();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
+		if(epicClientId != null && !epicClientId.isEmpty()) {
+			headers.add("Epic-Client-ID", epicClientId);
+		}
 		requestJson.put("terminologyServiceUri", terminologyServiceUri);
 		requestJson.put("dataServiceUri", dataServiceUri);
 		requestJson.put("terminologyUser", terminologyUser);
@@ -185,6 +189,14 @@ public class CQLExecutionService {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	public String getEpicClientId() {
+		return epicClientId;
+	}
+
+	public void setEpicClientId(String epicClientId) {
+		this.epicClientId = epicClientId;
 	}
 	
 }
