@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Christopher Schuler on 6/19/2017.
@@ -60,8 +61,11 @@ public abstract class BaseFhirDataProvider implements DataProvider {
             BasicAuthInterceptor basicAuth = new BasicAuthInterceptor(userName, password);
             fhirClient.registerInterceptor(basicAuth);
         }
-        
         if(bearerToken != null) {
+        	BearerTokenAuthInterceptor bearerAuth = new BearerTokenAuthInterceptor(bearerToken);
+        	fhirClient.registerInterceptor(bearerAuth);
+        }
+        if(additionalHeaders != null) {
         	BearerTokenAuthInterceptor bearerAuth = new BearerTokenAuthInterceptor(bearerToken);
         	fhirClient.registerInterceptor(bearerAuth);
         }
@@ -86,6 +90,10 @@ public abstract class BaseFhirDataProvider implements DataProvider {
         this.bearerToken = bearerToken;
         return this;
     }
+    public BaseFhirDataProvider withAdditionalHeaders(Map<String, String> additionalHeaders) {
+        this.additionalHeaders = additionalHeaders;
+        return this;
+    }
     public boolean isExpandValueSets() {
         return expandValueSets;
     }
@@ -107,7 +115,7 @@ public abstract class BaseFhirDataProvider implements DataProvider {
         return fhirClient;
     }
     
- // TODO: Obviously don't want to do this, just a quick-fix for now
+ // TODO: Obviously don't want to do this long term, just a quick-fix for now
     private String userName;
     public String getUserName() {
         return userName;
@@ -130,6 +138,13 @@ public abstract class BaseFhirDataProvider implements DataProvider {
     }
     public void setBearerToken(String bearerToken) {
         this.bearerToken = bearerToken;
+    }
+    private Map<String, String> additionalHeaders;
+    public String getAdditionalHeaders() {
+        return password;
+    }
+    public void setAdditionalHeaders(String password) {
+        this.password = password;
     }
     // Transformations
     protected DateTime toDateTime(Date result) {

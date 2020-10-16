@@ -10,12 +10,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBException;
@@ -52,9 +54,11 @@ import org.opencds.cqf.cql.util.service.BaseCodeMapperService;
 import org.opencds.cqf.cql.util.service.BaseCodeMapperService.CodeMapperIncorrectEquivalenceException;
 import org.opencds.cqf.cql.util.service.BaseCodeMapperService.CodeMapperNotFoundException;
 import org.opencds.cqf.cql.util.service.FhirCodeMapperServiceStu3;
+import org.opencds.cqf.cql.util.service.OAuthTokenService;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.EncodingEnum;
+import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.client.api.ServerValidationModeEnum;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -70,7 +74,9 @@ import java.util.*;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.EncodingEnum;
 import ca.uhn.fhir.rest.client.api.ServerValidationModeEnum;
+import ca.uhn.fhir.rest.client.interceptor.AdditionalRequestHeadersInterceptor;
 import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
+import ca.uhn.fhir.rest.client.interceptor.BearerTokenAuthInterceptor;
 
 /**
  * Created by Christopher on 1/13/2017.
@@ -119,7 +125,7 @@ public class Executor {
     private void registerProviders(Context context, String bearerToken, String termSvcUrl, String termUser,
                                    String termPass, String dataPvdrURL, String dataUser,
                                    String dataPass, String codeMapServiceUri, String codeMapperUser,
-                                   String codeMapperPass, String fhirVersion)
+                                   String codeMapperPass, String fhirVersion, String access_token, String epicClientId)
     {
         // TODO: plugin authorization for data provider when available
 
@@ -133,12 +139,24 @@ public class Executor {
         	bearerToken = bearerToken.split("Bearer ")[1];
         	provider = provider.withBearerAuth(bearerToken);
         }
+        if(access_token != null && !access_token.isEmpty()) {
+        	IGenericClient client = provider.getFhirClient();
+        	BearerTokenAuthInterceptor authInterceptor = new BearerTokenAuthInterceptor(access_token);
+        	client.registerInterceptor(authInterceptor);
+        }
         provider.setEndpoint(dataPvdrURL == null ? defaultEndpoint : dataPvdrURL);
         FhirContext fhirContext = provider.getFhirContext();
+        Map<String, String> additionalHeaders = new HashMap<String, String>();
+        if(epicClientId != null && !epicClientId.isEmpty()) {
+        	additionalHeaders.put("Epic-Client-ID", epicClientId);
+        	IGenericClient client = provider.getFhirClient();
+        	AdditionalRequestHeadersInterceptor interceptor = new AdditionalRequestHeadersInterceptor();
+			interceptor.addHeaderValue("Epic-Client-ID", epicClientId);
+			client.registerInterceptor(interceptor);
+        }
         fhirContext.getRestfulClientFactory().setServerValidationMode(ServerValidationModeEnum.NEVER);
         provider.setFhirContext(fhirContext);
         provider.getFhirClient().setEncoding(EncodingEnum.JSON);
-
         FhirTerminologyProvider terminologyProvider = new FhirTerminologyProvider()
                 .withBasicAuth(termUser, termPass)
                 .setEndpoint(termSvcUrl == null ? defaultEndpoint : termSvcUrl, false);
@@ -243,8 +261,10 @@ public class Executor {
 
     @POST
     @Consumes({MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_JSON})
-    public String evaluateCql(@HeaderParam("Authorization") String bearerToken, String requestData) throws JAXBException, IOException, ParseException {
+    @Produces({MediaType.APPLICATION_JSON + ";charset=utf-8"})
+    public String evaluateCql(@HeaderParam("Authorization") String bearerToken, @HeaderParam("Epic-Client-ID") String epicClientId,
+    		@QueryParam("client_id") String client_id, @QueryParam("client_secret") String client_secret,
+    		@QueryParam("redirect_uri") String redirect_uri,@QueryParam("code") String oauth_code, String requestData) throws JAXBException, IOException, ParseException {
 
         JSONParser parser = new JSONParser();
         JSONObject json;
@@ -280,7 +300,15 @@ public class Executor {
         json.remove("codeMapperSystemsMap");
         String fhirVersion = (String) json.get("fhirVersion");
         json.remove("fhirVersion");
-
+        String oauthBaseURI = (String) json.get("oauthBaseURI");
+        json.remove("oauthBaseURI");
+        String access_token = "";
+        if(!Stream.of(client_id, client_secret,redirect_uri,oauth_code,oauthBaseURI).allMatch(Objects::isNull)) {
+        	OAuthTokenService oauthTokenService = new OAuthTokenService();
+        	access_token = oauthTokenService.getAccessTokenFromOAuth(
+    			oauthBaseURI, client_id, client_secret, redirect_uri,
+    			oauth_code);
+        }
         
         CqlTranslator translator;
         try {
@@ -314,7 +342,7 @@ public class Executor {
         Context context = new Context(library);
         registerProviders(context, bearerToken, terminologyServiceUri, terminologyUser,
         		terminologyPass, dataServiceUri, dataUser, dataPass, codeMapperServiceUri,
-        		codeMapperUser, codeMapperPass, fhirVersion);
+        		codeMapperUser, codeMapperPass, fhirVersion, access_token, epicClientId);
 
         JSONArray resultArr = new JSONArray();
         if(library.getParameters() != null) {
@@ -328,7 +356,7 @@ public class Executor {
         	for (ExpressionDef def: library.getStatements().getDef()) {
 	        	if(def.getExpression() instanceof ConceptEvaluator) {
 	        		ConceptEvaluator conceptEval = (ConceptEvaluator) def.getExpression();
-	        		for(Code codeConcept:new ArrayList<>(conceptEval.getCode())) { 
+	        		for(Code codeConcept:new ArrayList<>(conceptEval.getCode())) {
 	        			String systemRefName = codeConcept.getSystem().getName();
 	        			String sourceSystemUri = LibraryUtil.getCodeSystemDefFromName(library, systemRefName).getId();
 	        			if(codeMapperSystemsMap.get(sourceSystemUri) != null) { 
@@ -361,6 +389,9 @@ public class Executor {
         	}
         }
         for (ExpressionDef def : library.getStatements().getDef()) {
+        	if(def.getName().equalsIgnoreCase("Patient")) {
+        		continue;
+        	}
         	//Continue on executing statements afterwords!
             context.enterContext(def.getContext());
             if (patientId != null && !patientId.isEmpty()) {
