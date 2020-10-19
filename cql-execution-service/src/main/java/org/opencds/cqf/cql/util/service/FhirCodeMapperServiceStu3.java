@@ -27,6 +27,9 @@ public class FhirCodeMapperServiceStu3 extends BaseCodeMapperService {
 	
 	@Override
 	public List<Code> translateCode(Code code,String sourceSystem, String targetSystem,Library library) throws CodeMapperIncorrectEquivalenceException, CodeMapperNotFoundException {
+		if (sourceSystem.equalsIgnoreCase(targetSystem)) {
+			return new ArrayList<Code>();
+		}
 		List<Code> returnList = new ArrayList<Code>();
 		Parameters inParams = new Parameters();
 		inParams.addParameter().setName("system").setValue(new StringType(sourceSystem));
