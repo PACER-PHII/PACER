@@ -1,6 +1,5 @@
 library ChlamydiaECR version '1.1'
 using FHIR version '3.0.0'
-include FHIRHelpers version '3.0.0' called FHIRHelpers
 codesystem "ICD9PROC": 'http://hl7.org/fhir/sid/icd-9-proc'
 codesystem "LOINC": 'http://loinc.org'
 codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
