@@ -3,6 +3,8 @@ services:
   cql-execution:
     build:
       context: ./cql-execution-service
+    ports:
+      - "8085:8080"
       
   cql-storage:
     depends_on:
@@ -85,7 +87,7 @@ services:
       CQL_EXECUTION_TERMINOLOGY_PASS: "v6R4*SsU39" #Update to your terminology credentials
       CQL_EXECUTION_URL: "cql-execution"
       CQL_STORAGE_URL: "cql-storage"
-      FHIR_FILTER_URL: "apps.hdap.gatech.edu"
+      FHIR_FILTER_URL: "fhir-filter:8081"
 
   translateconcept:
     depends_on:
