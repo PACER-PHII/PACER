@@ -5,7 +5,6 @@ services:
       context: ./cql-execution-service
     ports:
       - "8085:8080"
-      
   cql-storage:
     depends_on:
       - db
@@ -70,7 +69,7 @@ services:
       - "8084:8080"
     environment:
       #Change to fhir data provider within the internal EHR
-      CQL_EXECUTION_DATA_SERVICE: "https://apps.hdap.gatech.edu/gt-fhir/fhir"
+      CQL_EXECUTION_DATA_SERVICE: "https://apps.hdap.gatech.edu/omoponfhir3/fhir"
       #Basic authentication credentials to the data service
       CQL_EXECUTION_DATA_USER: "client"
       CQL_EXECUTION_DATA_PASS: "secret"
@@ -87,7 +86,7 @@ services:
       CQL_EXECUTION_TERMINOLOGY_PASS: "v6R4*SsU39" #Update to your terminology credentials
       CQL_EXECUTION_URL: "cql-execution"
       CQL_STORAGE_URL: "cql-storage"
-      FHIR_FILTER_URL: "fhir-filter:8081"
+      FHIR_FILTER_URL: "fhir-filter"
 
   translateconcept:
     depends_on:
