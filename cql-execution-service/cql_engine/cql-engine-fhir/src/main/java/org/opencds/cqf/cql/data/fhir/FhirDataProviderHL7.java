@@ -71,7 +71,9 @@ public class FhirDataProviderHL7 extends FhirDataProviderStu3 {
             if(!dataType.equalsIgnoreCase("Patient")) {
             	referenceId = new IdType("Patient", contextValue.toString());
             }
-            params.append(String.format("%s=%s", getPatientSearchParam(dataType), URLEncode(referenceId.toString())));
+            String referenceIdString = referenceId.toString();
+            String referenceIdNoResource = referenceIdString.indexOf("/") == -1 ? referenceIdString : referenceIdString.substring(referenceIdString.lastIndexOf("/") + 1);  
+            params.append(String.format("%s=%s", getPatientSearchParam(dataType), URLEncode(referenceIdNoResource)));
         }
 
         if (codePath != null && !codePath.equals("")) {

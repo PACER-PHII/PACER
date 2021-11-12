@@ -1,5 +1,7 @@
 package org.opencds.cqf.cql.data;
 
+import java.util.Map;
+
 import org.opencds.cqf.cql.runtime.Code;
 import org.opencds.cqf.cql.runtime.Interval;
 
@@ -22,6 +24,10 @@ public interface DataProvider {
     Class resolveType(Object value);
 
     Object createInstance(String typeName);
+    
+    String getSearchParametersUsed(String context, Object contextValue, String dataType, String templateId, String codePath,
+              Iterable<Code> codes, String valueSet, String datePath, String dateLowPath, String dateHighPath,
+              Interval dateRange);
 
     void setValue(Object target, String path, Object value);
 }

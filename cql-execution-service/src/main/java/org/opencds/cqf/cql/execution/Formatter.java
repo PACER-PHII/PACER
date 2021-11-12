@@ -1,19 +1,19 @@
 package org.opencds.cqf.cql.execution;
 
-import org.cqframework.cql.tools.formatter.CqlFormatterVisitor;
-import org.cqframework.cql.tools.formatter.Main;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+
+import org.cqframework.cql.tools.formatter.CqlFormatterVisitor;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 /**
  * Created by Christopher on 7/30/2017.
  */

@@ -1,8 +1,10 @@
 package org.opencds.cqf.cql.execution;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +40,7 @@ import org.cqframework.cql.elm.tracking.TrackBack;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.opencds.cqf.cql.data.fhir.BaseFhirDataProvider;
@@ -48,13 +51,23 @@ import org.opencds.cqf.cql.data.fhir.FhirDataProviderStu3;
 import org.opencds.cqf.cql.elm.execution.CodeEvaluator;
 import org.opencds.cqf.cql.elm.execution.CodeSystemRefEvaluator;
 import org.opencds.cqf.cql.elm.execution.ConceptEvaluator;
+import org.opencds.cqf.cql.elm.execution.RetrieveEvaluator;
 import org.opencds.cqf.cql.terminology.fhir.FhirTerminologyProvider;
 import org.opencds.cqf.cql.util.LibraryUtil;
 import org.opencds.cqf.cql.util.service.BaseCodeMapperService;
 import org.opencds.cqf.cql.util.service.BaseCodeMapperService.CodeMapperIncorrectEquivalenceException;
 import org.opencds.cqf.cql.util.service.BaseCodeMapperService.CodeMapperNotFoundException;
+import org.opencds.cqf.cql.util.service.CapabilityStatementRequirementsService;
+import org.opencds.cqf.cql.util.service.FhirSearchRequirementsService;
 import org.opencds.cqf.cql.util.service.FhirCodeMapperServiceStu3;
+import org.opencds.cqf.cql.util.service.FhirFilterPatchServiceDstu2;
+import org.opencds.cqf.cql.util.service.FhirFilterPatchServiceStu3;
 import org.opencds.cqf.cql.util.service.OAuthTokenService;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.EncodingEnum;
@@ -89,6 +102,10 @@ public class Executor {
     // for future use
     private ModelManager modelManager;
     private BaseCodeMapperService codeMapperService;
+    private FhirSearchRequirementsService fhirSearchRequirementsService;
+    private CapabilityStatementRequirementsService capabilityStatementRequirementsService;
+    private FhirFilterPatchServiceDstu2 fhirFilterPatchServiceDstu2;
+    private FhirFilterPatchServiceStu3 fhirFilterPatchServiceStu3;
     private ModelManager getModelManager() {
         if (modelManager == null) {
             modelManager = new ModelManager();
@@ -127,7 +144,6 @@ public class Executor {
                                    String dataPass, String codeMapServiceUri, String codeMapperUser,
                                    String codeMapperPass, String fhirVersion, String access_token, String epicClientId)
     {
-        // TODO: plugin authorization for data provider when available
 
         String defaultEndpoint = "http://measure.eval.kanvix.com/cqf-ruler/baseDstu3";
 
@@ -165,6 +181,10 @@ public class Executor {
         		.withBasicAuth(codeMapperUser,codeMapperPass)
         		.setEndpoint(codeMapServiceUri)
         		: null;
+        fhirSearchRequirementsService = new FhirSearchRequirementsService();
+        capabilityStatementRequirementsService = new CapabilityStatementRequirementsService();
+        fhirFilterPatchServiceDstu2 = new FhirFilterPatchServiceDstu2(fhirContext); //Should type check fhir context here
+        fhirFilterPatchServiceStu3 = new FhirFilterPatchServiceStu3(fhirContext); //Should type check fhir context here
         provider.setTerminologyProvider(terminologyProvider);
 //        provider.setSearchUsingPOST(true);
         provider.setExpandValueSets(true);
@@ -173,7 +193,7 @@ public class Executor {
         context.registerLibraryLoader(getLibraryLoader());
     }
 
-    private void performRetrieve(String fhirVersion, Iterable result, JSONObject results) {
+    private String retrieveAllPages(String fhirVersion, Iterable result, JSONObject results) {
         FhirContext fhirContext = (fhirVersion != null && fhirVersion.equalsIgnoreCase("DSTU2")) ? FhirContext.forDstu2() : FhirContext.forDstu3(); // for JSON parsing
         Iterator it = result.iterator();
         List<Object> findings = new ArrayList<>();
@@ -184,7 +204,8 @@ public class Executor {
                     .setPrettyPrint(true)
                     .encodeResourceToString((org.hl7.fhir.instance.model.api.IBaseResource)it.next()));
         }
-        results.put("result", findings.toString());
+        String findingsString = findings.toString();
+        return findingsString;
     }
 
     private String resolveType(Object result) {
@@ -338,7 +359,7 @@ public class Executor {
         }
 
         Library library = translateLibrary(translator);
-
+        
         Context context = new Context(library);
         registerProviders(context, bearerToken, terminologyServiceUri, terminologyUser,
         		terminologyPass, dataServiceUri, dataUser, dataPass, codeMapperServiceUri,
@@ -388,6 +409,49 @@ public class Executor {
 	        	}
         	}
         }
+        
+        //Handle searchparameter needs and capability statement definitions
+        System.out.println("Writing needs parameters to file.");
+        Map<String, Set<String> > searchParameterNeedsMap = fhirSearchRequirementsService.getSearchRequirementsOfLibrary(library);
+        String jsonString = JSONValue.toJSONString(searchParameterNeedsMap);
+        PrintWriter writer = new PrintWriter(new File(library.getIdentifier().getId()+"_NeedsParameters.json"));
+        writer.write(jsonString);
+        writer.close();
+        System.out.println("Writing needs parameters PER DEFINITION to file.");
+        Map<String, Map<String, Object>> searchParameterNeedsPerDefinitionMap = fhirSearchRequirementsService.getSearchRequirementsOfLibraryPerDefinition(library);
+        jsonString = JSONValue.toJSONString(searchParameterNeedsPerDefinitionMap);
+        writer = new PrintWriter(new File(library.getIdentifier().getId()+"_NeedsByDefinitionParameters.json"));
+        writer.write(jsonString);
+        writer.close();
+        System.out.println("Writing offers paramer to file.");
+        Map<String, Set<String> > searchParameterOffersMap = capabilityStatementRequirementsService.getCapabilityStatementOfFhirServer(dataServiceUri);
+        jsonString = JSONValue.toJSONString(searchParameterOffersMap);
+        writer = new PrintWriter(new File(library.getIdentifier().getId()+"_OffersParameter.json"));
+        writer.write(jsonString);
+        writer.close();
+        //The map that defines the differences between whats offered and what's needed.
+        Map<String, Set<String> > needsAndOffersGap = new HashMap<String, Set<String> >();
+        for(Map.Entry<String, Set<String> > needsResource: searchParameterNeedsMap.entrySet()) {
+        	String resourceName = needsResource.getKey();
+        	Set<String> needsParameters = needsResource.getValue();
+        	if(!searchParameterOffersMap.containsKey(needsResource.getKey())) {
+        		needsAndOffersGap.put(resourceName, needsParameters);
+        	}
+        	else {
+        		Set<String> offersParameters = searchParameterOffersMap.get(needsResource.getKey());
+        		Set<String> gapParameters = new HashSet<String>();
+        		gapParameters.addAll(needsParameters);
+        		gapParameters.removeAll(offersParameters);
+        		needsAndOffersGap.put(resourceName, gapParameters);
+        	}
+        }
+        
+        jsonString = JSONValue.toJSONString(needsAndOffersGap);
+        System.out.println("Writing gap statement to file.");
+        writer = new PrintWriter(new File(library.getIdentifier().getId()+"_GapParameters.json"));
+        writer.write(jsonString);
+        writer.close();
+        
         for (ExpressionDef def : library.getStatements().getDef()) {
         	if(def.getName().equalsIgnoreCase("Patient")) {
         		continue;
@@ -409,19 +473,29 @@ public class Executor {
                 result.put("location", location);
 
                 Object res = def instanceof FunctionDef ? "Definition successfully validated" : def.getExpression().evaluate(context);
-
+                String searchParamQuery = "";
+                if(def.getExpression() instanceof RetrieveEvaluator) {
+                	searchParamQuery = ((RetrieveEvaluator)def.getExpression()).getSearchParamsUsed(context);
+                }
                 if (res == null) {
                     result.put("result", "Null");
                 }
                 else if (res instanceof FhirBundleCursorStu3) {
-                    performRetrieve(fhirVersion,(Iterable) res, result);
+                	String allPagesFhirResult = retrieveAllPages(fhirVersion,(Iterable) res, result);
+                	Map<String, Object> expressionNeeds = searchParameterNeedsPerDefinitionMap.get(def.getName());
+                	String allPagesFhirResultFiltered = fhirFilterPatchServiceStu3.filterResults(expressionNeeds, needsAndOffersGap, searchParamQuery, allPagesFhirResult);
+                	result.put("result", allPagesFhirResultFiltered);
                 }
                 else if (res instanceof FhirBundleCursorDstu2) {
-                    performRetrieve(fhirVersion,(Iterable) res, result);
+                	String allPagesFhirResult = retrieveAllPages(fhirVersion,(Iterable) res, result);
+                	Map<String, Object> expressionNeeds = searchParameterNeedsPerDefinitionMap.get(def.getName());
+                	String allPagesFhirResultFiltered = fhirFilterPatchServiceDstu2.filterResults(expressionNeeds, needsAndOffersGap, searchParamQuery, allPagesFhirResult);
+                	result.put("result", allPagesFhirResultFiltered);
                 }
                 else if (res instanceof List) {
                     if (((List) res).size() > 0 && ((List) res).get(0) instanceof IBaseResource) {
-                        performRetrieve(fhirVersion,(Iterable) res, result);
+                    	String allPagesFhirResult = retrieveAllPages(fhirVersion,(Iterable) res, result);
+                    	result.put("result", allPagesFhirResult);
                     }
                     else {
                         result.put("result", res.toString());

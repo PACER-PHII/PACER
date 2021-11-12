@@ -6,6 +6,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.util.Map;
 
 /**
  * Created by Bryn on 5/4/2016.
@@ -17,6 +18,13 @@ public class SystemDataProvider implements DataProvider {
                                      String codePath, Iterable<Code> codes, String valueSet, String datePath,
                                      String dateLowPath, String dateHighPath, Interval dateRange) {
         throw new IllegalArgumentException("SystemDataProvider does not support retrieval.");
+    }
+    
+    @Override
+    public String getSearchParametersUsed(String context, Object contextValue, String dataType, String templateId,
+                                     String codePath, Iterable<Code> codes, String valueSet, String datePath,
+                                     String dateLowPath, String dateHighPath, Interval dateRange) {
+        throw new IllegalArgumentException("SystemDataProvider does not support getSystemParametersUsed.");
     }
 
     @Override

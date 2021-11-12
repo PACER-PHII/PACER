@@ -24,7 +24,9 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,6 +47,29 @@ public class FhirDataProviderDstu2 extends BaseDataProviderDstu2 {
                                      String dateHighPath, Interval dateRange)
     {
         IQuery<IBaseBundle> search;
+        String urlQueryString = generateUrlQueryString(context, contextValue,dataType,templateId,
+        		codePath,codes,valueSet,datePath,dateLowPath,dateHighPath,dateRange);
+        search = getFhirClient().search().byUrl(urlQueryString);
+        ca.uhn.fhir.model.dstu2.resource.Bundle results = cleanEntry(search.returnBundle(ca.uhn.fhir.model.dstu2.resource.Bundle.class).execute(), dataType);
+        return new FhirBundleCursorDstu2(getFhirClient(), results);
+    }
+
+    @Override
+    public String getSearchParametersUsed(String context, Object contextValue, String dataType,
+                                     String templateId, String codePath, Iterable<Code> codes,
+                                     String valueSet, String datePath, String dateLowPath,
+                                     String dateHighPath, Interval dateRange)
+    {
+    	String urlQueryString = generateUrlQueryString(context, contextValue,dataType,templateId,
+        		codePath,codes,valueSet,datePath,dateLowPath,dateHighPath,dateRange);
+    	return urlQueryString;
+    }
+    
+    private String generateUrlQueryString(String context, Object contextValue, String dataType,
+            String templateId, String codePath, Iterable<Code> codes,
+            String valueSet, String datePath, String dateLowPath,
+            String dateHighPath, Interval dateRange) {
+    	IQuery<IBaseBundle> search;
 
         // TODO: It's unclear from the FHIR documentation whether we need to use a URLEncoder.encode call on the embedded system and valueset uris here...
         StringBuilder params = new StringBuilder();
@@ -53,9 +78,9 @@ public class FhirDataProviderDstu2 extends BaseDataProviderDstu2 {
             params.append(String.format("_profile=%s", templateId));
         }
 
-        if (valueSet != null && valueSet.startsWith("urn:oid:")) {
+        /*if (valueSet != null && valueSet.startsWith("urn:oid:")) {
             valueSet = valueSet.replace("urn:oid:", "");
-        }
+        }*/
 
         if (codePath == null && (codes != null || valueSet != null)) {
             throw new IllegalArgumentException("A code path must be provided when filtering on codes or a valueset.");
@@ -69,7 +94,9 @@ public class FhirDataProviderDstu2 extends BaseDataProviderDstu2 {
             if(!dataType.equalsIgnoreCase("Patient")) {
             	referenceId = new IdType("Patient", contextValue.toString());
             }
-            params.append(String.format("%s=%s", getPatientSearchParam(dataType), referenceId.toString()));
+            String referenceIdString = referenceId.toString();
+            String referenceIdNoResource = referenceIdString.indexOf("/") == -1 ? referenceIdString : referenceIdString.substring(referenceIdString.lastIndexOf("/") + 1);  
+            params.append(String.format("%s=%s", getPatientSearchParam(dataType), referenceIdNoResource));
         }
 
         if (codePath != null && !codePath.equals("")) {
@@ -131,18 +158,15 @@ public class FhirDataProviderDstu2 extends BaseDataProviderDstu2 {
         }
 
         // TODO: Use compartment search for patient context?
+        String urlQueryString = "";
         if (params.length() > 0) {
-            search = getFhirClient().search().byUrl(String.format("%s?%s", dataType, params.toString()));
+        	urlQueryString = String.format("%s?%s", dataType, params.toString());
         }
         else {
-            search = getFhirClient().search().byUrl(String.format("%s", dataType));
+        	urlQueryString = String.format("%s?%s", dataType, params.toString());
         }
-
-        ca.uhn.fhir.model.dstu2.resource.Bundle results = cleanEntry(search.returnBundle(ca.uhn.fhir.model.dstu2.resource.Bundle.class).execute(), dataType);
-
-        return new FhirBundleCursorDstu2(getFhirClient(), results);
+        return urlQueryString;
     }
-
     public IValueSetEnumBinder<Enum<?>> getBinder(Class clazz) {
         try {
             Field field = clazz.getField("VALUESET_BINDER");

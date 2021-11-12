@@ -1,14 +1,14 @@
 package org.opencds.cqf.cql.execution;
 
-import org.cqframework.cql.cql2elm.LibrarySourceProvider;
-import org.hl7.elm.r1.VersionedIdentifier;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import org.cqframework.cql.cql2elm.LibrarySourceProvider;
+import org.hl7.elm.r1.VersionedIdentifier;
 
 /**
  * Created by Christopher on 2/19/2017.

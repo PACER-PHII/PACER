@@ -3,22 +3,21 @@ package org.opencds.cqf.cql.util.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.cqframework.cql.elm.execution.Code;
 import org.cqframework.cql.elm.execution.CodeSystemDef;
 import org.cqframework.cql.elm.execution.CodeSystemRef;
 import org.cqframework.cql.elm.execution.Library;
-import org.hl7.fhir.dstu3.model.CodeType;
 import org.hl7.fhir.dstu3.model.Coding;
 import org.hl7.fhir.dstu3.model.ConceptMap;
 import org.hl7.fhir.dstu3.model.Parameters;
 import org.hl7.fhir.dstu3.model.Parameters.ParametersParameterComponent;
-import org.opencds.cqf.cql.util.LibraryUtil;
 import org.hl7.fhir.dstu3.model.StringType;
+import org.opencds.cqf.cql.util.LibraryUtil;
 
 import ca.uhn.fhir.context.FhirContext;
 
 public class FhirCodeMapperServiceStu3 extends BaseCodeMapperService {
-
 	public FhirCodeMapperServiceStu3() {
 		this.fhirContext = FhirContext.forDstu3();
 		fhirContext.getRestfulClientFactory().setPoolMaxPerRoute(1);

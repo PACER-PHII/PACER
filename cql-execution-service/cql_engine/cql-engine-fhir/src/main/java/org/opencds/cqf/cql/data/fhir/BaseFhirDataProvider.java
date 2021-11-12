@@ -255,6 +255,12 @@ public abstract class BaseFhirDataProvider implements DataProvider {
     public Iterable<Object> retrieve(String context, Object contextValue, String dataType, String templateId, String codePath, Iterable<Code> codes, String valueSet, String datePath, String dateLowPath, String dateHighPath, Interval dateRange) {
         return null;
     }
+    
+    // DataProvider methods
+    @Override
+    public String getSearchParametersUsed(String context, Object contextValue, String dataType, String templateId, String codePath, Iterable<Code> codes, String valueSet, String datePath, String dateLowPath, String dateHighPath, Interval dateRange) {
+        return null;
+    }
 
     @Override
     public String getPackageName() {

@@ -9,6 +9,7 @@ import org.hl7.fhir.dstu3.model.Enumeration;
 import org.hl7.fhir.dstu3.model.Patient;
 import org.hl7.fhir.dstu3.model.ValueSet;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
+import org.json.simple.JSONObject;
 import org.opencds.cqf.cql.runtime.Code;
 import org.opencds.cqf.cql.runtime.Interval;
 import org.opencds.cqf.cql.terminology.ValueSetInfo;
@@ -17,6 +18,7 @@ import org.opencds.cqf.cql.terminology.fhir.FhirTerminologyProvider;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -42,6 +44,38 @@ public class FhirDataProviderStu3 extends BaseDataProviderStu3 {
                                      String dateHighPath, Interval dateRange) {
 
         // Apply filtering based on
+        //  profile (templateId)
+        //  codes
+        //  dateRange
+        IQuery<IBaseBundle> search = searchUsingPOST ? fhirClient.search().forResource(dataType) : null;
+        String queryString = this.generateUrlQueryString(context, contextValue, dataType,
+        		templateId, codePath, codes, valueSet, datePath, dateLowPath, 
+        		dateHighPath, dateRange);
+        if (search == null) {
+            search = fhirClient.search().byUrl(queryString);
+        }
+
+        org.hl7.fhir.dstu3.model.Bundle results = cleanEntry(search.returnBundle(org.hl7.fhir.dstu3.model.Bundle.class).execute(), dataType);
+
+        return new FhirBundleCursorStu3(fhirClient, results);
+    }
+    
+    @Override
+    public String getSearchParametersUsed(String context, Object contextValue, String dataType,
+                                     String templateId, String codePath, Iterable<Code> codes,
+                                     String valueSet, String datePath, String dateLowPath,
+                                     String dateHighPath, Interval dateRange)
+    {
+    	String urlQueryString = generateUrlQueryString(context, contextValue,dataType,templateId,
+        		codePath,codes,valueSet,datePath,dateLowPath,dateHighPath,dateRange);
+    	return urlQueryString;
+    }
+    
+    private String generateUrlQueryString(String context, Object contextValue, String dataType,
+            String templateId, String codePath, Iterable<Code> codes,
+            String valueSet, String datePath, String dateLowPath,
+            String dateHighPath, Interval dateRange) {
+    	// Apply filtering based on
         //  profile (templateId)
         //  codes
         //  dateRange
@@ -90,9 +124,9 @@ public class FhirDataProviderStu3 extends BaseDataProviderStu3 {
                 }
                 String referenceString = (String)contextValue;
                 String patientSearchParam = getPatientSearchParam(dataType);
-                if(!dataType.equalsIgnoreCase("Patient") && !patientSearchParam.equalsIgnoreCase("patient")) {
+                /*if(!dataType.equalsIgnoreCase("Patient") && !patientSearchParam.equalsIgnoreCase("patient")) {
                 	referenceString = "Patient/"+ (String)contextValue;
-                }
+                } */
                 params.append(String.format("%s=%s", getPatientSearchParam(dataType), URLEncode(referenceString)));
             }
         }
@@ -190,20 +224,14 @@ public class FhirDataProviderStu3 extends BaseDataProviderStu3 {
                 }
             }
         }
-
-        if (search == null) {
-            // TODO: Use compartment search for patient context?
-            if (params.length() > 0) {
-                search = fhirClient.search().byUrl(String.format("%s?%s", dataType, params.toString()));
-            }
-            else {
-                search = fhirClient.search().byUrl(String.format("%s", dataType));
-            }
+        String returnString = "";
+        if (params.length() > 0) {
+            returnString = String.format("%s?%s", dataType, params.toString());
         }
-
-        org.hl7.fhir.dstu3.model.Bundle results = cleanEntry(search.returnBundle(org.hl7.fhir.dstu3.model.Bundle.class).execute(), dataType);
-
-        return new FhirBundleCursorStu3(fhirClient, results);
+        else {
+        	returnString = String.format("%s?%s", dataType, params.toString());
+        }
+        return returnString;
     }
 
     private org.hl7.fhir.dstu3.model.Bundle cleanEntry(org.hl7.fhir.dstu3.model.Bundle bundle, String dataType) {

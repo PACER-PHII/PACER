@@ -8,7 +8,6 @@ import org.cqframework.cql.elm.execution.CodeSystemDef;
 import org.cqframework.cql.elm.execution.CodeSystemRef;
 import org.cqframework.cql.elm.execution.Library;
 import org.opencds.cqf.cql.util.LibraryUtil;
-import org.opencds.cqf.cql.util.service.BaseCodeMapperService.CodeMapperNotFoundException;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.model.dstu2.composite.CodingDt;

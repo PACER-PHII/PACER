@@ -9,4 +9,5 @@ FROM jetty:9.4.32-jdk8
 #move the WAR from builder into jetty container
 COPY --chown=jetty:jetty --from=builder /usr/src/cql_src/target/CQLExecSvc-1.0-SNAPSHOT.war /var/lib/jetty/webapps/cql.war
 COPY --chown=jetty:jetty --from=builder /usr/src/cql_src/src/main/resources/* /var/lib/jetty/src/main/resources/
+COPY --chown=jetty:jetty --from=builder /usr/src/cql_src/search-parameter-map-* /var/lib/jetty/
 EXPOSE 8080
