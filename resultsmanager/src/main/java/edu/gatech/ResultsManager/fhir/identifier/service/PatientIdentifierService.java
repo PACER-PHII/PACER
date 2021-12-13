@@ -1,9 +1,12 @@
 package edu.gatech.ResultsManager.fhir.identifier.service;
 
 import org.hl7.fhir.dstu3.model.Bundle;
+import org.hl7.fhir.dstu3.model.OperationOutcome;
 import org.hl7.fhir.dstu3.model.Patient;
+import org.hl7.fhir.dstu3.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -17,33 +20,32 @@ import ca.uhn.fhir.rest.client.interceptor.AdditionalRequestHeadersInterceptor;
 import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
 import ca.uhn.fhir.rest.gclient.TokenClientParam;
 import edu.gatech.ResultsManager.controller.ResultsManagerController;
+import edu.gatech.ResultsManager.fhir.config.FhirConfig;
 
 @Service
-@Configuration
-@ConfigurationProperties(prefix="cql.execution")
 @Primary
 public class PatientIdentifierService {
 	Logger log = LoggerFactory.getLogger(PatientIdentifierService.class);
-	private String dataServiceUri;
-	private String dataUser;
-	private String dataPass;
-	private String epicClientId;
-	private IGenericClient client;
+	private FhirConfig fhirConfig;
 	private FhirContext ctx;
-	public PatientIdentifierService() {
+	private IGenericClient client;
+	
+	@Autowired
+	public PatientIdentifierService(FhirConfig fhirConfig) {
+		this.fhirConfig = fhirConfig;
 		ctx = FhirContext.forDstu3();
 	}
 	
 	public String getFhirIdByIdentifier(String identifier) throws Exception {
-		log.debug("*-* request patient identifier @ fhir server:"+dataServiceUri);
-		client = ctx.newRestfulGenericClient(dataServiceUri);
+		log.debug("*-* request patient identifier @ fhir server:"+fhirConfig.getDataServiceUri());
+		client = ctx.newRestfulGenericClient(fhirConfig.getDataServiceUri());
 		BaseIdentifierDt identifierObject = createIDFromString(identifier);
-		if(dataUser != null && !dataUser.isEmpty() && dataPass != null && !dataPass.isEmpty()) {
-			client.registerInterceptor(new BasicAuthInterceptor(dataUser,dataPass));
+		if(fhirConfig.getDataUser() != null && !fhirConfig.getDataUser().isEmpty() && fhirConfig.getDataPass() != null && !fhirConfig.getDataPass().isEmpty()) {
+			client.registerInterceptor(new BasicAuthInterceptor(fhirConfig.getDataUser(),fhirConfig.getDataPass()));
 		}
-		if(epicClientId != null && !epicClientId.isEmpty()) {
+		if(fhirConfig.getEpicClientId() != null && !fhirConfig.getEpicClientId().isEmpty()) {
 			AdditionalRequestHeadersInterceptor interceptor = new AdditionalRequestHeadersInterceptor();
-			interceptor.addHeaderValue("Epic-Client-Id", epicClientId);
+			interceptor.addHeaderValue("Epic-Client-Id", fhirConfig.getEpicClientId());
 			client.registerInterceptor(interceptor);
 		}
 		Bundle results = client
@@ -54,40 +56,14 @@ public class PatientIdentifierService {
 				.execute();
 		if(!results.hasEntry())
 			throw new Exception("Patient identifier " + identifier + "not found.");
-		Patient patient = (Patient) results.getEntryFirstRep().getResource();
+		Resource resource = results.getEntryFirstRep().getResource();
+		if (resource instanceof OperationOutcome) {
+			log.error("Searching for Patient identifier results in an OperationOutcome");
+			log.error(ctx.newJsonParser().encodeResourceToString(resource));
+			throw new Exception("Cannot find the patient id from identifier");
+		}
+		Patient patient = (Patient) resource;
 		return patient.getIdElement().getIdPart();
-	}
-	
-	public String getDataServiceUri() {
-		return dataServiceUri;
-	}
-
-	public void setDataServiceUri(String dataServiceUri) {
-		this.dataServiceUri = dataServiceUri;
-	}
-
-	public String getDataUser() {
-		return dataUser;
-	}
-
-	public void setDataUser(String dataUser) {
-		this.dataUser = dataUser;
-	}
-
-	public String getDataPass() {
-		return dataPass;
-	}
-
-	public void setDataPass(String dataPass) {
-		this.dataPass = dataPass;
-	}
-
-	public String getEpicClientId() {
-		return epicClientId;
-	}
-
-	public void setEpicClientId(String epicClientId) {
-		this.epicClientId = epicClientId;
 	}
 	
 	public BaseIdentifierDt createIDFromString(String input) {

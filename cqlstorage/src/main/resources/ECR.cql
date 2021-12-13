@@ -7,6 +7,7 @@ codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
 codesystem "icd10cm": 'http://hl7.org/fhir/sid/icd-10-cm'
 codesystem "sct": 'http://snomed.info/sct'
 codesystem "rxnorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'
+codesystem "musclocal": 'urn:hssc:musc:medicationcode'
 
 define "Chlamydia_Codes": Concept {Code 'A56' from icd10cm, Code 'A56.0' from icd10cm, Code 'A56.00' from icd10cm, Code 'A56.01' from icd10cm, Code 'A56.02' from icd10cm, Code 'A56.09' from icd10cm, Code 'A56.1' from icd10cm, Code 'A56.11' from icd10cm, Code 'A56.19' from icd10cm, Code 'A56.2' from icd10cm, Code 'A56.3' from icd10cm, Code 'A56.4' from icd10cm, Code 'A56.8' from icd10cm, Code 'A74' from icd10cm, Code 'A74.8' from icd10cm, Code 'A74.81' from icd10cm, Code 'A74.89' from icd10cm, Code 'A74.9' from icd10cm, Code 'J16' from icd10cm, Code 'P23.1' from icd10cm, Code 'A74.0' from icd10cm, Code 'A55' from icd10cm, Code '179101003' from sct, Code '446752000' from sct, Code '186729003' from sct, Code '367504009' from sct, Code '188463006' from sct, Code '447353001' from sct, Code '237097008' from sct, Code '420910002' from sct, Code '197172005' from sct, Code '240589008' from sct, Code '447386002' from sct, Code '186731007' from sct, Code '447372001' from sct, Code '426165006' from sct, Code '198176005' from sct, Code '312099009' from sct, Code '237084006' from sct, Code '447402003' from sct, Code '236683007' from sct, Code '428015005' from sct, Code '426247003' from sct, Code '237043008' from sct, Code '237106009' from sct, Code '105629000' from sct, Code '446642005' from sct, Code '237039009' from sct, Code '189312004' from sct }
 define "Gonorrhea_Codes": Concept {Code 'A54' from icd10cm, Code 'A54.0' from icd10cm, Code 'A54.00' from icd10cm, Code 'A54.01' from icd10cm, Code 'A54.02' from icd10cm, Code 'A54.03' from icd10cm, Code 'A54.09' from icd10cm, Code 'A54.1' from icd10cm, Code 'A54.2' from icd10cm, Code 'A54.21' from icd10cm, Code 'A54.22' from icd10cm, Code 'A54.23' from icd10cm, Code 'A54.29' from icd10cm, Code 'A54.3' from icd10cm, Code 'A54.30' from icd10cm, Code 'A54.31' from icd10cm, Code 'A54.32' from icd10cm, Code 'A54.33' from icd10cm, Code 'A54.39' from icd10cm, Code 'A54.4' from icd10cm, Code 'A54.40' from icd10cm, Code 'A54.41' from icd10cm, Code 'A54.42' from icd10cm,Code 'A54.43' from icd10cm, Code 'A54.49' from icd10cm, Code 'A54.5' from icd10cm,Code 'A54.6' from icd10cm, Code 'A54.8' from icd10cm, Code 'A54.81' from icd10cm, Code 'A54.82' from icd10cm, Code 'A54.83' from icd10cm, Code 'A54.84' from icd10cm, Code 'A54.85' from icd10cm, Code 'A54.86' from icd10cm, Code 'A54.89' from icd10cm, Code 'A54.9' from icd10cm, Code 'O98.2' from icd10cm, Code 'O98.21' from icd10cm, Code 'O98.211' from icd10cm, Code 'O98.212' from icd10cm, Code 'O98.213' from icd10cm, Code 'O98.219' from icd10cm, Code 'O98.22' from icd10cm, Code 'O98.23' from icd10cm}
@@ -15,9 +16,9 @@ define "Immunization_Codes": Concept { Code '1292459' from rxnorm, Code '1942166
 define "Macrolides": Concept { Code '315090' from rxnorm, Code '240741' from rxnorm, Code '686355' from rxnorm, Code '597455' from rxnorm, Code '598006' from rxnorm, Code '204844' from rxnorm, Code '577378' from rxnorm, Code '487129' from rxnorm, Code '310157' from rxnorm, Code '686405' from rxnorm, Code '686406' from rxnorm, Code '686400' from rxnorm, Code '141962' from rxnorm, Code '308460' from rxnorm, Code '141963' from rxnorm, Code '861416' from rxnorm, Code '1668238' from rxnorm, Code '245242' from rxnorm, Code '245240' from rxnorm, Code '1668264' from rxnorm, Code '248656' from rxnorm, Code '310154' from rxnorm, Code '686383' from rxnorm, Code '310155' from rxnorm, Code '197516' from rxnorm, Code '309322' from rxnorm, Code '686418' from rxnorm, Code '359385' from rxnorm, Code '197517' from rxnorm, Code '197650' from rxnorm, Code '308459' from rxnorm }
 define "Levofloxacin": Concept { Code '1665507' from rxnorm, Code '1665519' from rxnorm, Code '1665497' from rxnorm, Code '199884' from rxnorm, Code '477391' from rxnorm, Code '311296' from rxnorm, Code '1665515' from rxnorm, Code '1665517' from rxnorm, Code '199885' from rxnorm, Code '82122' from rxnorm }
 define "Doxycycline": Concept { Code '434018' from rxnorm, Code '348870' from rxnorm, Code '406524' from rxnorm, Code '1649990' from rxnorm, Code '1650143' from rxnorm, Code '1653433' from rxnorm, Code '1650444' from rxnorm, Code '1650446' from rxnorm, Code '1650142' from rxnorm, Code '1791505' from rxnorm, Code '348869' from rxnorm, Code '1998483' from rxnorm, Code '1423080' from rxnorm, Code '1649405' from rxnorm, Code '1649988' from rxnorm, Code '1649425' from rxnorm, Code '757466' from rxnorm, Code '1649401' from rxnorm, Code '799048' from rxnorm, Code '757464' from rxnorm, Code '901399' from rxnorm, Code '1652674' from rxnorm, Code '1652673' from rxnorm, Code '728207' from rxnorm, Code '757460' from rxnorm, Code '835700' from rxnorm, Code '597521' from rxnorm, Code '597520' from rxnorm, Code '700408' from rxnorm, Code '1801138' from rxnorm, Code '310026' from rxnorm, Code '310027' from rxnorm, Code '310028' from rxnorm, Code '1650030' from rxnorm, Code '283535' from rxnorm, Code '1650032' from rxnorm, Code '1649429' from rxnorm , Code '3640' from rxnorm }
-define "Azithromycin": Concept { Code 'ABCD' from rxnorm }
-define "Ceftriaxone": Concept { Code 'ABCD' from rxnorm }
-define "Erythromycin": Concept { Code '4053' from rxnorm }
+define "Azithromycin": Concept { Code '430129' from musclocal, Code '15284' from musclocal, Code '20943' from musclocal, Code '17428' from musclocal, Code '18631' from rxnorm }
+define "Ceftriaxone": Concept { Code '600868' from musclocal, Code '600720' from musclocal, Code '400107' from musclocal}
+define "Erythromycin": Concept { Code '4053' from rxnorm, Code '2193' from rxnorm }
 define "Ofloxcin": Concept { Code '7623' from rxnorm }
 define "Sti Symptoms": Concept { Code 'N34' from icd10cm, Code 'N34.1' from icd10cm, Code 'N34.2' from icd10cm, Code 'N34.1' from icd10cm, Code 'R36' from icd10cm, Code 'R36.0' from icd10cm, Code 'R36.9' from icd10cm}
 
@@ -64,56 +65,13 @@ define "ChlamydiaEncounters": [Encounter] Encounter
 
 define "FirstEncounter": First("ChlamydiaEncounters" AllEns)
 define "LastEncounter": Last("ChlamydiaEncounters" AllEns)
-define "43.Encounters.Date_Of_Diagnosis": "FirstEncounter".period.start.value
-define "44.Medication.MedicationProvided.1": [Medication: Code in "Macrolides"]
-define "44.Medication.MedicationProvided.2": [Medication: Code in "Levofloxacin"]
-define "44.Medication.MedicationProvided.3": [Medication: Code in "Doxycycline"]
-define "44.Medication.MedicationProvided.4": [Medication: Code in "Azithromycin"]
-define "44.Medication.MedicationProvided.5": [Medication: Code in "Ceftriaxone"]
-define "44.Medication.MedicationProvided.6": [Medication: Code in "Erythromycin"]
-define "44.Medication.MedicationProvided.7": [Medication: Code in "Ofloxcin"]
-define "44.Medication_Request.MedicationProvided.1": [MedicationRequest: "Macrolides"] medRequest
-    with "44.Medication.MedicationProvided.1" meds
-    such that exists (
-      (medRequest.medication.reference) ref
-        where EndsWith(ref, '/' + meds.id)
-    )
-define "44.Medication_Request.MedicationProvided.2": [MedicationRequest: "Levofloxacin"] medRequest
-    with "44.Medication.MedicationProvided.2" meds
-    such that exists (
-      (medRequest.medication.reference) ref
-        where EndsWith(ref, '/' + meds.id)
-    )
-define "44.Medication_Request.MedicationProvided.3": [MedicationRequest: "Doxycycline"] medRequest
-    with "44.Medication.MedicationProvided.3" meds
-    such that exists (
-      (medRequest.medication.reference) ref
-        where EndsWith(ref, '/' + meds.id)
-    )
-define "44.Medication_Request.MedicationProvided.4": [MedicationRequest: "Azithromycin"] medRequest
-    with "44.Medication.MedicationProvided.4" meds
-    such that exists (
-      (medRequest.medication.reference) ref
-        where EndsWith(ref, '/' + meds.id)
-    )
-define "44.Medication_Request.MedicationProvided.5": [MedicationRequest: "Ceftriaxone"] medRequest
-    with "44.Medication.MedicationProvided.5" meds
-    such that exists (
-      (medRequest.medication.reference) ref
-        where EndsWith(ref, '/' + meds.id)
-    )
-define "44.Medication_Request.MedicationProvided.6": [MedicationRequest: "Erythromycin"] medRequest
-    with "44.Medication.MedicationProvided.6" meds
-    such that exists (
-      (medRequest.medication.reference) ref
-        where EndsWith(ref, '/' + meds.id)
-    )
-define "44.Medication_Request.MedicationProvided.7": [MedicationRequest: "Ofloxcin"] medRequest
-    with "44.Medication.MedicationProvided.7" meds
-    such that exists (
-      (medRequest.medication.reference) ref
-        where EndsWith(ref, '/' + meds.id)
-    )
+define "44.Medication_Request.MedicationProvided.1": [MedicationStatement: Code in "Macrolides"]
+define "44.Medication_Request.MedicationProvided.2": [MedicationStatement: Code in "Levofloxacin"]
+define "44.Medication_Request.MedicationProvided.3": [MedicationStatement: Code in "Doxycycline"]
+define "44.Medication_Request.MedicationProvided.4": [MedicationStatement: Code in "Azithromycin"]
+define "44.Medication_Request.MedicationProvided.5": [MedicationStatement: Code in "Ceftriaxone"]
+define "44.Medication_Request.MedicationProvided.6": [MedicationStatement: Code in "Erythromycin"]
+define "44.Medication_Request.MedicationProvided.7": [MedicationStatement: Code in "Ofloxcin"]
 define "36.Encounter.Admission_DateTime": "FirstEncounter".period.start.value
 define "37.Encounter.Visit_DateTime": "FirstEncounter".period.start.value
 define "45.Patient.Death_Date": "Pt".deceased

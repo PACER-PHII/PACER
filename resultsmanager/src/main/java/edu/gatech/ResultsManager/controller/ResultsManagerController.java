@@ -5,7 +5,6 @@ import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.HttpStatusCodeException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -21,7 +19,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import edu.gatech.ResultsManager.FHIR2ECR.service.CQLFHIR2ECRService;
 import edu.gatech.ResultsManager.cql.execution.service.CQLExecutionService;
 import edu.gatech.ResultsManager.cql.storage.service.CQLStorageService;
-import edu.gatech.ResultsManager.ecr.storage.service.ECRStorageService;
 import edu.gatech.ResultsManager.fhir.identifier.service.PatientIdentifierService;
 import gatech.edu.STIECR.JSON.ECR;
 

@@ -13,6 +13,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -50,7 +51,6 @@ public class FHIRFilterService {
 	public String applyFilter(String rawFhir,boolean escaped) {
 		UriComponents uriComponents = UriComponentsBuilder.newInstance()
 				.scheme("http").host(endpoint).port("8080").path("/fhirfilter/apply").build();
-		log.debug("*-* requesting fhir filter @:"+uriComponents.toUriString());
 		if(!escaped) { //Trying to prevent double un-escaping here
 			rawFhir = StringEscapeUtils.unescapeJava(rawFhir);
 		}
@@ -58,13 +58,17 @@ public class FHIRFilterService {
 			//BAD HACK TO GET AROUND VALUE STRING WRAPPING
 			rawFhir = rawFhir.substring(1, rawFhir.length()-1);
 		}
-		log.debug("fhir resource before filter:"+rawFhir);
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
 		HttpEntity<String> entity = new HttpEntity<String>(rawFhir, headers);
-		String filteredResult = restTemplate.postForEntity(uriComponents.toUriString(), entity, String.class).getBody();
-		log.debug("fhir resource after filter:"+filteredResult);
-		return filteredResult;
+		try {
+			String filteredResult = restTemplate.postForEntity(uriComponents.toUriString(), entity, String.class).getBody();
+			return filteredResult;
+		}
+		catch(HttpClientErrorException e) {
+			log.warn("Error Filtering Results. Using original fhir and not filtering.");
+			return rawFhir;
+		}
 	}
 	
 	/**

@@ -3,7 +3,6 @@ package edu.gatech.ResultsManager.FHIR2ECR.util;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 import org.hl7.fhir.dstu3.model.Address;

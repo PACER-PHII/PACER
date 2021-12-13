@@ -61,6 +61,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import edu.gatech.ResultsManager.FHIR2ECR.util.HAPIFHIRUtil;
+import edu.gatech.ResultsManager.fhir.referenceresource.service.RetrieveReferenceResourceService;
 import edu.gatech.ResultsManager.fhirfilter.service.FHIRFilterService;
 import gatech.edu.STIECR.JSON.Diagnosis;
 import gatech.edu.STIECR.JSON.ECR;
@@ -79,12 +80,14 @@ public class CQLFHIR2ECRService {
 
 	Logger log = LoggerFactory.getLogger(CQLFHIR2ECRService.class);
 	FHIRFilterService fhirFilterService;
+	RetrieveReferenceResourceService retrieveReferenceResourceService;
 	Bundle globalBundle;
 	IParser parser3;
 	ObjectMapper objectMapper;
 	
-	public CQLFHIR2ECRService(FHIRFilterService fhirFilterService) {
+	public CQLFHIR2ECRService(FHIRFilterService fhirFilterService, RetrieveReferenceResourceService retrieveReferenceResourceService) {
 		this.fhirFilterService = fhirFilterService;
+		this.retrieveReferenceResourceService = retrieveReferenceResourceService;
 		parser3 = FhirContext.forDstu3().newJsonParser();
 		objectMapper = new ObjectMapper();
 		globalBundle = new Bundle();
@@ -415,6 +418,14 @@ public class CQLFHIR2ECRService {
 		} else if (medicationCodeUntyped instanceof Reference) {
 			Reference reference = (Reference) medicationCodeUntyped;
 			Medication medication = (Medication)findResourceFromReferenceInGlobalBundle(reference);
+			if(medication == null) {
+				try {
+					medication = retrieveReferenceResourceService.getRelatedMedication(medicationAdministration);
+				} catch (FHIRException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 			code = medication.getCode();
 		}
 		
@@ -486,7 +497,14 @@ public class CQLFHIR2ECRService {
 		} else if (medicationCodeUntyped instanceof Reference) {
 			Reference reference = (Reference) medicationCodeUntyped;
 			Medication medication = (Medication)findResourceFromReferenceInGlobalBundle(reference);
-			log.info("MEDICATIONREQUEST --- found medication resource: " + medicationCodeUntyped.getClass());
+			if(medication == null) {
+				try {
+					medication = retrieveReferenceResourceService.getRelatedMedication(medicationRequest);
+				} catch (FHIRException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 			code = medication.getCode();
 		}
 		if (code != null && !code.getCoding().isEmpty()) {
@@ -571,7 +589,17 @@ public class CQLFHIR2ECRService {
 		if (medicationCodeUntyped instanceof CodeableConcept) {
 			code = (CodeableConcept) medicationCodeUntyped;
 		} else if (medicationCodeUntyped instanceof Reference) {
-			code = ((Medication) ((Reference) medicationCodeUntyped).getResource()).getCode();
+			Reference reference = (Reference) medicationCodeUntyped;
+			Medication medication = (Medication)findResourceFromReferenceInGlobalBundle(reference);
+			if(medication == null) {
+				try {
+					medication = retrieveReferenceResourceService.getRelatedMedication(medicationStatement);
+				} catch (FHIRException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			code = medication.getCode();
 		}
 		if (code != null && !code.getCoding().isEmpty()) {
 			log.info("MEDICATIONSTATEMENT --- Trying coding: " + code.getCodingFirstRep().getDisplay());
