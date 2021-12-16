@@ -423,7 +423,7 @@ public class Executor {
         writer = new PrintWriter(new File(library.getIdentifier().getId()+"_NeedsByDefinitionParameters.json"));
         writer.write(jsonString);
         writer.close();
-        System.out.println("Writing offers paramer to file.");
+        System.out.println("Writing offers parameters to file.");
         Map<String, Set<String> > searchParameterOffersMap = capabilityStatementRequirementsService.getCapabilityStatementOfFhirServer(dataServiceUri);
         jsonString = JSONValue.toJSONString(searchParameterOffersMap);
         writer = new PrintWriter(new File(library.getIdentifier().getId()+"_OffersParameter.json"));
@@ -471,12 +471,12 @@ public class Executor {
 
                 String location = String.format("[%d:%d]", locations.get(def.getName()).get(0), locations.get(def.getName()).get(1));
                 result.put("location", location);
-
-                Object res = def instanceof FunctionDef ? "Definition successfully validated" : def.getExpression().evaluate(context);
                 String searchParamQuery = "";
                 if(def.getExpression() instanceof RetrieveEvaluator) {
                 	searchParamQuery = ((RetrieveEvaluator)def.getExpression()).getSearchParamsUsed(context);
+                	System.out.println("Fhir Request:"searchParamQuery);
                 }
+                Object res = def instanceof FunctionDef ? "Definition successfully validated" : def.getExpression().evaluate(context);
                 if (res == null) {
                     result.put("result", "Null");
                 }
