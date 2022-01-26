@@ -34,6 +34,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
 import com.jayway.jsonpath.ReadContext;
 import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
@@ -46,6 +47,8 @@ import ca.uhn.fhir.model.dstu2.FhirDstu2;
 import ca.uhn.fhir.model.primitive.CodeDt;
 import ca.uhn.fhir.parser.DataFormatException;
 import ca.uhn.fhir.parser.IParser;
+import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.client.impl.BaseClient;
 
 public class FhirFilterPatchServiceDstu2 {
 	Logger log = Logger.getLogger(FhirFilterPatchServiceDstu2.class);
@@ -56,7 +59,8 @@ public class FhirFilterPatchServiceDstu2 {
 	Gson gson;
 	ObjectMapper objectMapper;
 	Configuration config;
-	public FhirFilterPatchServiceDstu2(FhirContext fhirContext) {
+	IGenericClient client;
+	public FhirFilterPatchServiceDstu2(FhirContext fhirContext,IGenericClient iGenericClient) {
 		String filePath = null;
 		if(fhirContext.getVersion() instanceof FhirDstu2) {
 			filePath = "search-parameter-map-dstu2.json";
@@ -85,6 +89,7 @@ public class FhirFilterPatchServiceDstu2 {
 		baseParameterMapEntity = gson.fromJson(reader, twoLevelMapType);
 		this.fhirContext = fhirContext;
 		parser = fhirContext.newJsonParser();
+		this.client = iGenericClient;
 	}
 	/**
 	 * Transform the result set to a FILTERED result
@@ -94,7 +99,7 @@ public class FhirFilterPatchServiceDstu2 {
 	 * @param fhirResultsString fhir data as string
 	 * @return
 	 */
-	public String filterResults(Map<String, Object> searchParameterNeeded, Map<String, Set<String> > gapMap, String queryString, String fhirResultsString) {
+	public String filterResults(Map<String, Object> searchParameterNeeded, Map<String, Set<String> > gapMap, String queryString, String fhirResultsString) throws PathNotFoundException{
 		log.debug("--- Initializing Filter Service for query:"+queryString+" ---");
 		//Decode URL values to have clean comparisons
 		try {

@@ -24,6 +24,7 @@ import org.hl7.fhir.dstu3.model.Bundle;
 import org.hl7.fhir.dstu3.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.dstu3.model.Coding;
 import org.hl7.fhir.dstu3.model.Resource;
+import org.hl7.fhir.dstu3.model.ResourceType;
 import org.hl7.fhir.r4.hapi.ctx.FhirR4;
 import org.opencds.cqf.cql.util.entity.FhirFilterPatch.ParameterEntity;
 import org.opencds.cqf.cql.util.entity.FhirFilterPatch.ParameterMapEntity;
@@ -38,6 +39,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
 import com.jayway.jsonpath.ReadContext;
 import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
@@ -50,6 +52,8 @@ import ca.uhn.fhir.model.dstu2.FhirDstu2;
 import ca.uhn.fhir.model.primitive.CodeDt;
 import ca.uhn.fhir.parser.DataFormatException;
 import ca.uhn.fhir.parser.IParser;
+import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.client.impl.BaseClient;
 
 public class FhirFilterPatchServiceStu3 {
 	Logger log = Logger.getLogger(FhirFilterPatchServiceStu3.class);
@@ -60,7 +64,8 @@ public class FhirFilterPatchServiceStu3 {
 	Gson gson;
 	ObjectMapper objectMapper;
 	Configuration config;
-	public FhirFilterPatchServiceStu3(FhirContext fhirContext) {
+	IGenericClient client;
+	public FhirFilterPatchServiceStu3(FhirContext fhirContext, IGenericClient iGenericClient) {
 		String filePath = null;
 		if(fhirContext.getVersion() instanceof FhirDstu2) {
 			filePath = "search-parameter-map-dstu2.json";
@@ -79,16 +84,11 @@ public class FhirFilterPatchServiceStu3 {
                 .jsonProvider(new JacksonJsonNodeJsonProvider())
                 .mappingProvider(new JacksonMappingProvider())
                 .build();
-		try {
-			reader = new BufferedReader(new FileReader(new File("search-parameter-map-dstu2.json")));
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		Type twoLevelMapType = new TypeToken<HashMap<String, HashMap<String, ParameterEntity> > >() {}.getType();
 		baseParameterMapEntity = gson.fromJson(reader, twoLevelMapType);
 		this.fhirContext = fhirContext;
 		parser = fhirContext.newJsonParser();
+		this.client = iGenericClient;
 	}
 	/**
 	 * Transform the result set to a FILTERED result
@@ -98,7 +98,7 @@ public class FhirFilterPatchServiceStu3 {
 	 * @param fhirResultsString fhir data as string
 	 * @return
 	 */
-	public String filterResults(Map<String, Object> searchParameterNeeded, Map<String, Set<String> > gapMap, String queryString, String fhirResultsString) {
+	public String filterResults(Map<String, Object> searchParameterNeeded, Map<String, Set<String> > gapMap, String queryString, String fhirResultsString) throws PathNotFoundException{
 		log.debug("--- Initializing Filter Service for query:"+queryString+" ---");
 		//Decode URL values to have clean comparisons
 		try {
@@ -208,7 +208,7 @@ public class FhirFilterPatchServiceStu3 {
 				return null;
 			}
 		}
-		catch(NullPointerException e) {
+		catch(NullPointerException | PathNotFoundException e) {
 		}
 		log.debug("--- Trying code handler ---");
 		//Try code datatype handler
@@ -224,6 +224,7 @@ public class FhirFilterPatchServiceStu3 {
 			}
 		}
 		catch(NullPointerException e) {
+			log.debug(e.getLocalizedMessage());
 		}
 		return null;
 	}

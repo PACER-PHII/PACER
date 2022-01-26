@@ -28,6 +28,7 @@ import org.cqframework.cql.cql2elm.CqlTranslator;
 import org.cqframework.cql.cql2elm.CqlTranslatorException;
 import org.cqframework.cql.cql2elm.LibraryManager;
 import org.cqframework.cql.cql2elm.ModelManager;
+import org.cqframework.cql.elm.execution.AliasedQuerySource;
 import org.cqframework.cql.elm.execution.Code;
 import org.cqframework.cql.elm.execution.CodeSystemDef;
 import org.cqframework.cql.elm.execution.CodeSystemRef;
@@ -51,6 +52,7 @@ import org.opencds.cqf.cql.data.fhir.FhirDataProviderStu3;
 import org.opencds.cqf.cql.elm.execution.CodeEvaluator;
 import org.opencds.cqf.cql.elm.execution.CodeSystemRefEvaluator;
 import org.opencds.cqf.cql.elm.execution.ConceptEvaluator;
+import org.opencds.cqf.cql.elm.execution.QueryEvaluator;
 import org.opencds.cqf.cql.elm.execution.RetrieveEvaluator;
 import org.opencds.cqf.cql.terminology.fhir.FhirTerminologyProvider;
 import org.opencds.cqf.cql.util.LibraryUtil;
@@ -63,11 +65,13 @@ import org.opencds.cqf.cql.util.service.FhirCodeMapperServiceStu3;
 import org.opencds.cqf.cql.util.service.FhirFilterPatchServiceDstu2;
 import org.opencds.cqf.cql.util.service.FhirFilterPatchServiceStu3;
 import org.opencds.cqf.cql.util.service.OAuthTokenService;
+import org.opencds.cqf.cql.util.service.ReferenceReplacementServiceStu3;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.jayway.jsonpath.PathNotFoundException;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.EncodingEnum;
@@ -106,6 +110,7 @@ public class Executor {
     private CapabilityStatementRequirementsService capabilityStatementRequirementsService;
     private FhirFilterPatchServiceDstu2 fhirFilterPatchServiceDstu2;
     private FhirFilterPatchServiceStu3 fhirFilterPatchServiceStu3;
+    private ReferenceReplacementServiceStu3 referenceReplacementServiceStu3;
     private ModelManager getModelManager() {
         if (modelManager == null) {
             modelManager = new ModelManager();
@@ -183,8 +188,9 @@ public class Executor {
         		: null;
         fhirSearchRequirementsService = new FhirSearchRequirementsService();
         capabilityStatementRequirementsService = new CapabilityStatementRequirementsService();
-        fhirFilterPatchServiceDstu2 = new FhirFilterPatchServiceDstu2(fhirContext); //Should type check fhir context here
-        fhirFilterPatchServiceStu3 = new FhirFilterPatchServiceStu3(fhirContext); //Should type check fhir context here
+        fhirFilterPatchServiceDstu2 = new FhirFilterPatchServiceDstu2(fhirContext,provider.getFhirClient()); //Should type check fhir context here
+        fhirFilterPatchServiceStu3 = new FhirFilterPatchServiceStu3(fhirContext,provider.getFhirClient()); //Should type check fhir context here
+        referenceReplacementServiceStu3 = new ReferenceReplacementServiceStu3(fhirContext,provider.getFhirClient());
         provider.setTerminologyProvider(terminologyProvider);
 //        provider.setSearchUsingPOST(true);
         provider.setExpandValueSets(true);
@@ -474,7 +480,15 @@ public class Executor {
                 String searchParamQuery = "";
                 if(def.getExpression() instanceof RetrieveEvaluator) {
                 	searchParamQuery = ((RetrieveEvaluator)def.getExpression()).getSearchParamsUsed(context);
-                	System.out.println("Fhir Request:"searchParamQuery);
+                	System.out.println("Fhir Request:"+searchParamQuery);
+                }
+                if(def.getExpression() instanceof QueryEvaluator) {
+                	for(AliasedQuerySource source : ((QueryEvaluator)def.getExpression()).getSource()) {
+                		if(source.getExpression() instanceof RetrieveEvaluator) {
+                			searchParamQuery = ((RetrieveEvaluator)source.getExpression()).getSearchParamsUsed(context);
+                        	System.out.println("Fhir Request:"+searchParamQuery);
+                		}
+                	}
                 }
                 Object res = def instanceof FunctionDef ? "Definition successfully validated" : def.getExpression().evaluate(context);
                 if (res == null) {
@@ -483,13 +497,35 @@ public class Executor {
                 else if (res instanceof FhirBundleCursorStu3) {
                 	String allPagesFhirResult = retrieveAllPages(fhirVersion,(Iterable) res, result);
                 	Map<String, Object> expressionNeeds = searchParameterNeedsPerDefinitionMap.get(def.getName());
-                	String allPagesFhirResultFiltered = fhirFilterPatchServiceStu3.filterResults(expressionNeeds, needsAndOffersGap, searchParamQuery, allPagesFhirResult);
+                	String allPagesRefrencesResolved = allPagesFhirResult;
+                	try {
+                		allPagesRefrencesResolved = referenceReplacementServiceStu3.replaceReferenceWithCode(allPagesFhirResult);
+                	}
+                	catch(Exception e) {
+                		System.out.println(e.getLocalizedMessage());
+                		System.out.println("Continuing on with no referencesReplaced");
+                	}
+                	String allPagesFhirResultFiltered = allPagesRefrencesResolved;
+                	try {
+                		allPagesFhirResultFiltered = fhirFilterPatchServiceStu3.filterResults(expressionNeeds, needsAndOffersGap, searchParamQuery, allPagesRefrencesResolved);
+                	}
+                	catch(PathNotFoundException e) {
+                		System.out.println(e.getLocalizedMessage());
+                		System.out.println("Continuing on with no filtering");
+                	}
                 	result.put("result", allPagesFhirResultFiltered);
                 }
                 else if (res instanceof FhirBundleCursorDstu2) {
                 	String allPagesFhirResult = retrieveAllPages(fhirVersion,(Iterable) res, result);
                 	Map<String, Object> expressionNeeds = searchParameterNeedsPerDefinitionMap.get(def.getName());
-                	String allPagesFhirResultFiltered = fhirFilterPatchServiceDstu2.filterResults(expressionNeeds, needsAndOffersGap, searchParamQuery, allPagesFhirResult);
+                	String allPagesFhirResultFiltered = allPagesFhirResult;
+                	try {
+                		allPagesFhirResultFiltered = fhirFilterPatchServiceDstu2.filterResults(expressionNeeds, needsAndOffersGap, searchParamQuery, allPagesFhirResult);
+                	}
+                	catch(PathNotFoundException e) {
+                		System.out.println(e.getLocalizedMessage());
+                		System.out.println("Continuing on with no filtering");
+                	}
                 	result.put("result", allPagesFhirResultFiltered);
                 }
                 else if (res instanceof List) {
