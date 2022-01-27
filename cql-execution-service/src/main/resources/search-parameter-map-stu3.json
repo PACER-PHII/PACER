@@ -4154,7 +4154,7 @@
         },
         "code": {
             "name": "code",
-            "path": "code",
+            "path": "medicationCodeableConcept",
             "type": "token"
         },
         "context": {
