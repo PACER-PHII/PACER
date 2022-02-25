@@ -1,4 +1,4 @@
-library ChlamydiaECR version '1.2'
+library ECR version '1.3'
 using FHIR version '3.0.0'
 include FHIRHelpers version '3.0.0' called FHIRHelpers
 codesystem "ICD9PROC": 'http://hl7.org/fhir/sid/icd-9-proc'
@@ -22,9 +22,11 @@ define "Immunization_Codes_2": Concept {Code '797641' from rxnorm, Code '1190916
 define "Immunization_Codes_3": Concept {Code '2050787' from rxnorm, Code '2050423' from rxnorm, Code '1801082' from rxnorm, Code '2050789' from rxnorm, Code '1099940' from rxnorm, Code '1300378' from rxnorm, Code '1942132' from rxnorm, Code '2050803' from rxnorm, Code '1300810' from rxnorm, Code '763106' from rxnorm, Code '1659729' from rxnorm, Code '830552' from rxnorm, Code '1486496' from rxnorm, Code '1724012' from rxnorm, Code '1657144' from rxnorm, Code '1300370' from rxnorm, Code '2050771' from rxnorm, Code '1928965' from rxnorm, Code '1658472' from rxnorm, Code '805378' from rxnorm, Code '1928329' from rxnorm, Code '2050777' from rxnorm, Code '798482' from rxnorm, Code '1298819' from rxnorm, Code '1292435' from rxnorm, Code '1537521' from rxnorm, Code '1300468' from rxnorm, Code '1657339' from rxnorm, Code '1658706' from rxnorm, Code '1858963' from rxnorm, Code '1858966' from rxnorm}
 define "Immunization_Codes_4": Concept {Code '832682' from rxnorm, Code '1597103' from rxnorm, Code '830263' from rxnorm, Code '1593140' from rxnorm, Code '1657330' from rxnorm, Code '1658144' from rxnorm, Code '1801189' from rxnorm, Code '1928356' from rxnorm, Code '1661807' from rxnorm, Code '1801183' from rxnorm, Code '798479' from rxnorm, Code '1367005' from rxnorm, Code '1928359' from rxnorm, Code '1292828' from rxnorm, Code '2050763' from rxnorm, Code '1801186' from rxnorm, Code '2048966' from rxnorm, Code '1292443' from rxnorm, Code '836636' from rxnorm, Code '836634' from rxnorm, Code '1244205' from rxnorm, Code '1659748' from rxnorm, Code '1928470' from rxnorm, Code '830253' from rxnorm, Code '2054274' from rxnorm, Code '1300191' from rxnorm, Code '1928344' from rxnorm, Code '1928982' from rxnorm, Code '1659983' from rxnorm, Code '1799413' from rxnorm, Code '1801075' from rxnorm, Code '1664644' from rxnorm, Code '1661812' from rxnorm, Code '1801193' from rxnorm }
 
-define "Macrolides": Concept { Code '315090' from rxnorm, Code '240741' from rxnorm, Code '686355' from rxnorm, Code '597455' from rxnorm, Code '598006' from rxnorm, Code '204844' from rxnorm, Code '577378' from rxnorm, Code '487129' from rxnorm, Code '310157' from rxnorm, Code '686405' from rxnorm, Code '686406' from rxnorm, Code '686400' from rxnorm, Code '141962' from rxnorm, Code '308460' from rxnorm, Code '141963' from rxnorm, Code '861416' from rxnorm, Code '1668238' from rxnorm, Code '245242' from rxnorm, Code '245240' from rxnorm, Code '1668264' from rxnorm, Code '248656' from rxnorm, Code '310154' from rxnorm, Code '686383' from rxnorm, Code '310155' from rxnorm, Code '197516' from rxnorm, Code '309322' from rxnorm, Code '686418' from rxnorm, Code '359385' from rxnorm, Code '197517' from rxnorm, Code '197650' from rxnorm, Code '308459' from rxnorm }
+define "Macrolides_0": Concept { Code '315090' from rxnorm, Code '240741' from rxnorm, Code '686355' from rxnorm, Code '597455' from rxnorm, Code '598006' from rxnorm, Code '204844' from rxnorm, Code '577378' from rxnorm, Code '487129' from rxnorm, Code '310157' from rxnorm, Code '686405' from rxnorm, Code '686406' from rxnorm, Code '686400' from rxnorm, Code '141962' from rxnorm, Code '308460' from rxnorm, Code '141963' from rxnorm }
+define "Macrolides_1": Concept { Code '861416' from rxnorm, Code '1668238' from rxnorm, Code '245242' from rxnorm, Code '245240' from rxnorm, Code '1668264' from rxnorm, Code '248656' from rxnorm, Code '310154' from rxnorm, Code '686383' from rxnorm, Code '310155' from rxnorm, Code '197516' from rxnorm, Code '309322' from rxnorm, Code '686418' from rxnorm, Code '359385' from rxnorm, Code '197517' from rxnorm, Code '197650' from rxnorm, Code '308459' from rxnorm }
 define "Levofloxacin": Concept { Code '1665507' from rxnorm, Code '1665519' from rxnorm, Code '1665497' from rxnorm, Code '199884' from rxnorm, Code '477391' from rxnorm, Code '311296' from rxnorm, Code '1665515' from rxnorm, Code '1665517' from rxnorm, Code '199885' from rxnorm, Code '82122' from rxnorm }
-define "Doxycycline": Concept { Code '434018' from rxnorm, Code '348870' from rxnorm, Code '406524' from rxnorm, Code '1649990' from rxnorm, Code '1650143' from rxnorm, Code '1653433' from rxnorm, Code '1650444' from rxnorm, Code '1650446' from rxnorm, Code '1650142' from rxnorm, Code '1791505' from rxnorm, Code '348869' from rxnorm, Code '1998483' from rxnorm, Code '1423080' from rxnorm, Code '1649405' from rxnorm, Code '1649988' from rxnorm, Code '1649425' from rxnorm, Code '757466' from rxnorm, Code '1649401' from rxnorm, Code '799048' from rxnorm, Code '757464' from rxnorm, Code '901399' from rxnorm, Code '1652674' from rxnorm, Code '1652673' from rxnorm, Code '728207' from rxnorm, Code '757460' from rxnorm, Code '835700' from rxnorm, Code '597521' from rxnorm, Code '597520' from rxnorm, Code '700408' from rxnorm, Code '1801138' from rxnorm, Code '310026' from rxnorm, Code '310027' from rxnorm, Code '310028' from rxnorm, Code '1650030' from rxnorm, Code '283535' from rxnorm, Code '1650032' from rxnorm, Code '1649429' from rxnorm , Code '3640' from rxnorm }
+define "Doxycycline_0": Concept { Code '434018' from rxnorm, Code '348870' from rxnorm, Code '406524' from rxnorm, Code '1649990' from rxnorm, Code '1650143' from rxnorm, Code '1653433' from rxnorm, Code '1650444' from rxnorm, Code '1650446' from rxnorm, Code '1650142' from rxnorm, Code '1791505' from rxnorm, Code '348869' from rxnorm, Code '1998483' from rxnorm, Code '1423080' from rxnorm, Code '1649405' from rxnorm, Code '1649988' from rxnorm, Code '1649425' from rxnorm, Code '757466' from rxnorm, Code '1649401' from rxnorm, Code '799048' from rxnorm }
+define "Doxycycline_1": Concept { Code '757464' from rxnorm, Code '901399' from rxnorm, Code '1652674' from rxnorm, Code '1652673' from rxnorm, Code '728207' from rxnorm, Code '757460' from rxnorm, Code '835700' from rxnorm, Code '597521' from rxnorm, Code '597520' from rxnorm, Code '700408' from rxnorm, Code '1801138' from rxnorm, Code '310026' from rxnorm, Code '310027' from rxnorm, Code '310028' from rxnorm, Code '1650030' from rxnorm, Code '283535' from rxnorm, Code '1650032' from rxnorm, Code '1649429' from rxnorm , Code '3640' from rxnorm }
 define "Azithromycin": Concept { Code '430129' from musclocal, Code '15284' from musclocal, Code '20943' from musclocal, Code '17428' from musclocal, Code '18631' from rxnorm }
 define "Ceftriaxone": Concept { Code '600868' from musclocal, Code '600720' from musclocal, Code '400107' from musclocal}
 define "Erythromycin": Concept { Code '4053' from rxnorm, Code '2193' from rxnorm }
@@ -61,7 +63,7 @@ define "32.Patient.Pregnancy": 'TBD'
 define "33.Patient.Travel_History": 'TBD'
 define "34.Patient.Insurance_Type": 'TBD'
 define "35.Immunization.Immunization_History": [Immunization] Immunes return Immunes
-define "38.Condition.Date_Of_Onset": "All Diagnosis".onset.value
+define "38.Condition.Date_Of_Onset": ConditionConvertOnsetToDateTime("All Diagnosis")
 define "39.Observation.Symptoms": [Condition: Code in "Sti Symptoms"]
 define "40.Lab?.LabOrderCode": 'TBD'
 define "41.Provider.Placer_Order_Number": 'TBD'
@@ -80,9 +82,13 @@ define "ChlamydiaEncounters": [Encounter] Encounter
 
 define "FirstEncounter": First("ChlamydiaEncounters" AllEns)
 define "LastEncounter": Last("ChlamydiaEncounters" AllEns)
-define "44.Medication_Request.MedicationProvided.1": [MedicationStatement: Code in "Macrolides"]
+define "44.Medication_Request.MedicationProvided.1_0": [MedicationStatement: Code in "Macrolides_0"]
+define "44.Medication_Request.MedicationProvided.1_1": [MedicationStatement: Code in "Macrolides_1"]
+define "44.Medication_Request.MedicationProvided.1": "44.Medication_Request.MedicationProvided.1_0" union "44.Medication_Request.MedicationProvided.1_1"
 define "44.Medication_Request.MedicationProvided.2": [MedicationStatement: Code in "Levofloxacin"]
-define "44.Medication_Request.MedicationProvided.3": [MedicationStatement: Code in "Doxycycline"]
+define "44.Medication_Request.MedicationProvided.3_0": [MedicationStatement: Code in "Doxycycline_0"]
+define "44.Medication_Request.MedicationProvided.3_1": [MedicationStatement: Code in "Doxycycline_1"]
+define "44.Medication_Request.MedicationProvided.3": "44.Medication_Request.MedicationProvided.3_0" union "44.Medication_Request.MedicationProvided.3_1"
 define "44.Medication_Request.MedicationProvided.4": [MedicationStatement: Code in "Azithromycin"]
 define "44.Medication_Request.MedicationProvided.5": [MedicationStatement: Code in "Ceftriaxone"]
 define "44.Medication_Request.MedicationProvided.6": [MedicationStatement: Code in "Erythromycin"]
@@ -92,3 +98,19 @@ define "37.Encounter.Visit_DateTime": "FirstEncounter".period.start.value
 define "45.Patient.Death_Date": "Pt".deceased
 define "46.Encounter.Date_Discharged": if "LastEncounter".period.end.value is not null then "LastEncounter".period.end.value else "LastEncounter".period.start.value
 define "48.Condition.Trigger_Code": "All Diagnosis".code
+
+
+define function ConditionConvertOnsetToDateTime(cond FHIR.Condition):
+    cond C
+        return
+            case
+                when (C.onset as FHIR.dateTime) is not null then
+                (C.onset as FHIR.dateTime)
+
+                when ((C.onset as FHIR.Period) is not null and (C.onset as FHIR.Period).start is not null) then
+                (C.onset as FHIR.Period).start
+                
+                when ((C.onset as FHIR.Period) is not null and (C.onset as FHIR.Period).end is not null) then
+                (C.onset as FHIR.Period).end
+                else C.onset
+            end
