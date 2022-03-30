@@ -1,11 +1,9 @@
 package gatech.edu.JobManagementSystem.model;
 
 import java.util.Date;
-import java.util.List;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -28,6 +26,8 @@ public class Person{
 	private Integer id;
 	@Column(name = "referenceId")
 	private String referenceId;
+	@Column(name = "recordId")
+	private String recordId;
 	@Column(name = "name")
 	private String name;
 	@Column(name = "labOrderDate")
@@ -53,6 +53,12 @@ public class Person{
 	}
 	public void setReferenceId(String referenceId) {
 		this.referenceId = referenceId;
+	}
+	public String getRecordId() {
+		return recordId;
+	}
+	public void setRecordId(String recordId) {
+		this.recordId = recordId;
 	}
 	public String getName() {
 		return name;
@@ -109,6 +115,7 @@ public class Person{
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		result = prime * result + ((processState == null) ? 0 : processState.hashCode());
 		result = prime * result + ((referenceId == null) ? 0 : referenceId.hashCode());
+		result = prime * result + ((recordId == null) ? 0 : recordId.hashCode());
 		result = prime * result + ((this.result == null) ? 0 : this.result.hashCode());
 		return result;
 	}
@@ -143,6 +150,11 @@ public class Person{
 				return false;
 		} else if (!referenceId.equals(other.referenceId))
 			return false;
+		if (recordId == null) {
+			if (other.recordId != null)
+				return false;
+		} else if (!recordId.equals(other.recordId))
+			return false;
 		if (result == null) {
 			if (other.result != null)
 				return false;
@@ -152,8 +164,8 @@ public class Person{
 	}
 	@Override
 	public String toString() {
-		return "Person [id=" + id + ", referenceId=" + referenceId + ", name=" + name + ", labOrderDate=" + labOrderDate
-				+ ", processState=" + processState + ", result=" + result + "]";
+		return "Person [id=" + id + ", referenceId=" + referenceId + ", recordId=" + recordId + ", name=" + name +
+				", labOrderDate=" + labOrderDate + ", processState=" + processState + ", result=" + result + "]";
 	}
 	
 }

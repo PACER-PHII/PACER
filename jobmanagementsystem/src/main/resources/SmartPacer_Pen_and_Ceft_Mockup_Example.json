@@ -1,0 +1,910 @@
+{
+  "resourceType": "Bundle",
+  "id": "d269460a-d7fa-404c-a2bd-bdda0edd802e",
+  "type": "collection",
+  "total": 24,
+  "entry": [
+    {
+      "fullUrl": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "e8efe3f9-63e7-49ab-a8c3-5e24c9521993",
+        "identifier": [
+          {
+            "system": "https://apps.hdap.gatech.edu/omoponfhir3/",
+            "value": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+          }
+        ],
+        "name": [
+          {
+            "use": "official",
+            "family": "Aberson",
+            "given": [
+              "Abe"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Condition/a3e2d4ef-f160-4a72-876d-c714aa2ae136",
+      "resource": {
+        "resourceType": "Condition",
+        "id": "a3e2d4ef-f160-4a72-876d-c714aa2ae136",
+        "identifier": [
+          {
+            "system": "https://apps.hdap.gatech.edu/omoponfhir3/",
+            "value": "Condition/a3e2d4ef-f160-4a72-876d-c714aa2ae136"
+          }
+        ],
+        "clinicalStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+              "code": "resolved",
+              "display": "Resolved"
+            }
+          ]
+        },
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "76272004",
+              "display": "Syphilis (disorder)"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "onsetDateTime": "2021-02-01T00:00:00-05:00"
+      }
+    },
+    {
+      "fullUrl": "MedicationStatement/95710e94-be64-42a7-aa88-5647c54c0704",
+      "resource": {
+        "resourceType": "MedicationStatement",
+        "id": "95710e94-be64-42a7-aa88-5647c54c0704",
+        "identifier": [
+          {
+            "system": "https://apps.hdap.gatech.edu/omoponfhir3/",
+            "value": "MedicationStatement/95710e94-be64-42a7-aa88-5647c54c0704"
+          }
+        ],
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "7984",
+              "display": "penicillin V"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "effectiveDateTime": "2021-02-02T00:00:00-05:00"
+      }
+    },
+    {
+      "fullUrl": "MedicationStatement/3b33fb1b-4975-4ee1-a1d5-af5ab6b47fc7",
+      "resource": {
+        "resourceType": "MedicationStatement",
+        "id": "3b33fb1b-4975-4ee1-a1d5-af5ab6b47fc7",
+        "identifier": [
+          {
+            "system": "https://apps.hdap.gatech.edu/omoponfhir3/",
+            "value": "MedicationStatement/3b33fb1b-4975-4ee1-a1d5-af5ab6b47fc7"
+          }
+        ],
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "7980",
+              "display": "penicillin G"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "effectiveDateTime": "2021-02-03T00:00:00-05:00"
+      }
+    },
+    {
+      "fullUrl": "MedicationStatement/459fd8d6-1028-4591-b68f-6fa1bfd0f19c",
+      "resource": {
+        "resourceType": "MedicationStatement",
+        "id": "459fd8d6-1028-4591-b68f-6fa1bfd0f19c",
+        "identifier": [
+          {
+            "system": "https://apps.hdap.gatech.edu/omoponfhir3/",
+            "value": "MedicationStatement/459fd8d6-1028-4591-b68f-6fa1bfd0f19c"
+          }
+        ],
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "1665020",
+              "display": "ceftriaxone 1000 MG"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "effectiveDateTime": "2021-02-03T00:00:00-05:00"
+      }
+    },
+    {
+      "fullUrl": "Condition/6f7b9b30-a978-483a-9c86-bb4f786aa346",
+      "resource": {
+        "resourceType": "Condition",
+        "id": "6f7b9b30-a978-483a-9c86-bb4f786aa346",
+        "identifier": [
+          {
+            "system": "https://apps.hdap.gatech.edu/omoponfhir3/",
+            "value": "Condition/6f7b9b30-a978-483a-9c86-bb4f786aa346"
+          }
+        ],
+        "clinicalStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+              "code": "resolved",
+              "display": "Resolved"
+            }
+          ]
+        },
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "76272004",
+              "display": "Syphilis (disorder)"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "onsetDateTime": "2021-04-03T00:00:00-04:00"
+      }
+    },
+    {
+      "fullUrl": "MedicationStatement/0e1d0d81-9b59-431b-9e04-fce15c85f27d",
+      "resource": {
+        "resourceType": "MedicationStatement",
+        "id": "0e1d0d81-9b59-431b-9e04-fce15c85f27d",
+        "identifier": [
+          {
+            "system": "https://apps.hdap.gatech.edu/omoponfhir3/",
+            "value": "MedicationStatement/0e1d0d81-9b59-431b-9e04-fce15c85f27d"
+          }
+        ],
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "7984",
+              "display": "penicillin V"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "effectiveDateTime": "2021-04-03T00:00:00-04:00"
+      }
+    },
+    {
+      "fullUrl": "MedicationStatement/e54904da-56f1-4e3b-9691-7a70f805f4a3",
+      "resource": {
+        "resourceType": "MedicationStatement",
+        "id": "e54904da-56f1-4e3b-9691-7a70f805f4a3",
+        "identifier": [
+          {
+            "system": "https://apps.hdap.gatech.edu/omoponfhir3/",
+            "value": "MedicationStatement/e54904da-56f1-4e3b-9691-7a70f805f4a3"
+          }
+        ],
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "7980",
+              "display": "penicillin G"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "effectiveDateTime": "2021-04-04T00:00:00-04:00"
+      }
+    },
+    {
+      "fullUrl": "MedicationStatement/866dd23f-e088-4aea-a3eb-5cb036ec56c0",
+      "resource": {
+        "resourceType": "MedicationStatement",
+        "id": "866dd23f-e088-4aea-a3eb-5cb036ec56c0",
+        "identifier": [
+          {
+            "system": "https://apps.hdap.gatech.edu/omoponfhir3/",
+            "value": "MedicationStatement/866dd23f-e088-4aea-a3eb-5cb036ec56c0"
+          }
+        ],
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "1665020",
+              "display": "ceftriaxone 1000 MG"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "effectiveDateTime": "2021-04-04T00:00:00-04:00"
+      }
+    },
+    {
+      "fullUrl": "Observation/eb4dc994-0a3b-4725-9679-adc24865fadb",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "eb4dc994-0a3b-4725-9679-adc24865fadb",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000001"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/95710e94-be64-42a7-aa88-5647c54c0704"
+          }
+        ],
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "7980",
+              "display": "penicillin G"
+            }
+          ]
+        },
+        "note": [
+          {
+            "text": "http://www.nlm.nih.gov/research/umls/rxnorm^7984"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/0a059863-a6d2-4008-a66a-75925d6308a8",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "0a059863-a6d2-4008-a66a-75925d6308a8",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000002"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/95710e94-be64-42a7-aa88-5647c54c0704"
+          }
+        ],
+        "valueQuantity": {
+          "value": 10,
+          "unit": "mg"
+        },
+        "note": [
+          {
+            "text": "10 mg"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/b9e2728d-543c-490c-b191-a45521782e39",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "b9e2728d-543c-490c-b191-a45521782e39",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000003"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/95710e94-be64-42a7-aa88-5647c54c0704"
+          }
+        ],
+        "valueDateTime": "2021-02-02T00:00:00-05:00",
+        "note": [
+          {
+            "text": "01-02-2021"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/c652149b-8cca-472d-8290-c468778d81cf",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "c652149b-8cca-472d-8290-c468778d81cf",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000002"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/3b33fb1b-4975-4ee1-a1d5-af5ab6b47fc7"
+          }
+        ],
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "7980",
+              "display": "penicillin G"
+            }
+          ],
+          "text": "http://www.nlm.nih.gov/research/umls/rxnorm^7980"
+        },
+        "note": [
+          {
+            "text": "http://www.nlm.nih.gov/research/umls/rxnorm^7980"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/849847bf-defa-44e4-aa14-cf7187eecc13",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "849847bf-defa-44e4-aa14-cf7187eecc13",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000002"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/3b33fb1b-4975-4ee1-a1d5-af5ab6b47fc7"
+          }
+        ],
+        "valueQuantity": {
+          "value": 20,
+          "unit": "mg"
+        },
+        "note": [
+          {
+            "text": "20 mg"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/e47d72b1-a565-4d67-81ca-1f01e630827a",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "e47d72b1-a565-4d67-81ca-1f01e630827a",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000003"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/3b33fb1b-4975-4ee1-a1d5-af5ab6b47fc7"
+          }
+        ],
+        "valueDateTime": "2021-02-03T00:00:00-05:00",
+        "note": [
+          {
+            "text": "01-03-2021"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/76958aa2-927e-4ddd-a193-ab7c62048518",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "76958aa2-927e-4ddd-a193-ab7c62048518",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000001"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/0e1d0d81-9b59-431b-9e04-fce15c85f27d"
+          }
+        ],
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "7980",
+              "display": "penicillin G"
+            }
+          ],
+          "text": "http://www.nlm.nih.gov/research/umls/rxnorm^7984"
+        },
+        "note": [
+          {
+            "text": "http://www.nlm.nih.gov/research/umls/rxnorm^7980"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/3664dd9c-f06d-4bef-9f7e-d876cec364b6",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "3664dd9c-f06d-4bef-9f7e-d876cec364b6",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000002"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/0e1d0d81-9b59-431b-9e04-fce15c85f27d"
+          }
+        ],
+        "valueQuantity": {
+          "value": 10,
+          "unit": "mg"
+        },
+        "note": [
+          {
+            "text": "10 mg"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/3eb3ef4b-7b24-4aec-9bcd-b23960d0936f",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "3eb3ef4b-7b24-4aec-9bcd-b23960d0936f",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000003"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/0e1d0d81-9b59-431b-9e04-fce15c85f27d"
+          }
+        ],
+        "valueDateTime": "2021-04-03T00:00:00-04:00",
+        "note": [
+          {
+            "text": "03-03-2021"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/6fe38b23-9332-400a-9352-211c63946cc4",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "6fe38b23-9332-400a-9352-211c63946cc4",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000001"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/459fd8d6-1028-4591-b68f-6fa1bfd0f19c"
+          }
+        ],
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "1665020",
+              "display": "ceftriaxone 1000 MG"
+            }
+          ],
+          "text": "http://www.nlm.nih.gov/research/umls/rxnorm^16650121"
+        },
+        "note": [
+          {
+            "text": "http://www.nlm.nih.gov/research/umls/rxnorm^46287327"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/58ed2513-530d-4df5-924f-262b5b2625cf",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "58ed2513-530d-4df5-924f-262b5b2625cf",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000002"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/459fd8d6-1028-4591-b68f-6fa1bfd0f19c"
+          }
+        ],
+        "valueQuantity": {
+          "value": 100,
+          "unit": "mg"
+        },
+        "note": [
+          {
+            "text": "100 mg"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/e6d52f69-ec06-4a12-8521-d04806d0620c",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "e6d52f69-ec06-4a12-8521-d04806d0620c",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000003"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/459fd8d6-1028-4591-b68f-6fa1bfd0f19c"
+          }
+        ],
+        "valueDateTime": "2021-02-03T00:00:00-05:00",
+        "note": [
+          {
+            "text": "03-04-2021"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/a7ff0d1b-cb25-4908-816b-e30d938d1717",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "a7ff0d1b-cb25-4908-816b-e30d938d1717",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000001"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/866dd23f-e088-4aea-a3eb-5cb036ec56c0"
+          }
+        ],
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "1665020",
+              "display": "ceftriaxone 1000 MG"
+            }
+          ],
+          "text": "http://www.nlm.nih.gov/research/umls/rxnorm^16650121"
+        },
+        "note": [
+          {
+            "text": "http://www.nlm.nih.gov/research/umls/rxnorm^46287327"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/8e64160a-416a-44b0-a043-07e885601753",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "8e64160a-416a-44b0-a043-07e885601753",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000002"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/866dd23f-e088-4aea-a3eb-5cb036ec56c0"
+          }
+        ],
+        "valueQuantity": {
+          "value": 100,
+          "unit": "mg"
+        },
+        "note": [
+          {
+            "text": "100 mg"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "Observation/8030175d-c339-4ab7-ac61-53263db44ed6",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "8030175d-c339-4ab7-ac61-53263db44ed6",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/ValueSet/observation-category",
+                "code": "survey",
+                "display": "Survey"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "urn:gtri:heat:syphilisregistry",
+              "code": "2000000003"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/e8efe3f9-63e7-49ab-a8c3-5e24c9521993"
+        },
+        "focus": [
+          {
+            "reference": "MedicationStatement/866dd23f-e088-4aea-a3eb-5cb036ec56c0"
+          }
+        ],
+        "valueDateTime": "2021-04-04T00:00:00-04:00"
+      }
+    }
+  ]
+}

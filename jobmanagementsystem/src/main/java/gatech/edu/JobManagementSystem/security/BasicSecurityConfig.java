@@ -1,7 +1,6 @@
 package gatech.edu.JobManagementSystem.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,6 +19,9 @@ public class BasicSecurityConfig extends WebSecurityConfigurerAdapter{
 	    .csrf().disable()
 	    .authorizeRequests().anyRequest().authenticated()
 	    .and().httpBasic();
+//	    http.authorizeRequests()
+//	      .antMatchers("/**")
+//	      .permitAll();
 	}
 	
 	 @Autowired
@@ -27,7 +29,7 @@ public class BasicSecurityConfig extends WebSecurityConfigurerAdapter{
     {
         auth.inMemoryAuthentication()
             .withUser(basicSecurityProperties.getUsername())
-            .password(basicSecurityProperties.getPassword())
+            .password("{noop}"+basicSecurityProperties.getPassword())//Assume plaintext, prefix {noop} on credentials
             .roles("USER");
     }
 

@@ -8,10 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestTemplate;
 
-import gatech.edu.JobManagementSystem.controller.JobManagementController;
 import gatech.edu.JobManagementSystem.model.Action;
 import gatech.edu.JobManagementSystem.model.ActionType;
-import gatech.edu.JobManagementSystem.model.ListRunType;
 import gatech.edu.JobManagementSystem.model.Person;
 import gatech.edu.JobManagementSystem.model.PersonProcessState;
 import gatech.edu.JobManagementSystem.util.JMSUtil;

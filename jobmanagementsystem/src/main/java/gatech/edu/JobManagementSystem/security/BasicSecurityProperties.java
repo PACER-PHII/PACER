@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(prefix="basicSecurity")
+@ConfigurationProperties(prefix="basicsecurity")
 public class BasicSecurityProperties {
 	
 	private String username;
