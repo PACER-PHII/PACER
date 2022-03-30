@@ -41,13 +41,19 @@ services:
     build:
       context: ./jobmanagementsystem
     ports:
-      - "8082:8080"
+      - "443:443"
     environment:
       JDBC_URL: "jdbc:postgresql://db:5432/db"
       JDBC_USER: "postgres"
       JDBC_PASSWORD: "postgres"
       BASIC_USERNAME: "username"
       BASIC_PASSWORD: "password"
+      #Provide an .p12 SSL Keystore file for JMS to use for SSL
+      SSL_KEYSTORE_FILE: ""
+      #When created, the p12 file will prompt user to provide a password
+      SSL_KEYSTORE_PASSWORD: ""
+      #Unique name for the keystore within the program. Same name as the file
+      SSL_KEYSTORE_ALIAS: ""
     command: ["./wait-for-it.sh", "db:5432", "--timeout=300", "--" ,"java","-jar", "/usr/src/app/JobManagementSystem.jar"]
 
   nginx-cache:
