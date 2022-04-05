@@ -5,7 +5,7 @@
   <groupId>gatech.edu</groupId>
   <artifactId>JobManagementSystem</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <packaging>war</packaging>
+  <packaging>jar</packaging>
 
   <name>JobManagementSystem</name>
   <url>http://maven.apache.org</url>

@@ -8,7 +8,8 @@ COPY . /usr/src/app
 COPY *.p12 /usr/src/app/src/main/resources/keystore/
 WORKDIR /usr/src/app
 RUN mvn clean install -DskipTests -f /usr/src/app/
-
+#As of Spring 2.x, need to run this step to make an executible jar
+RUN mvn package spring-boot:repackage
 FROM openjdk:17
 #move the WAR for contesa to the webapps directory
 COPY --from=builder /usr/src/app/target/JobManagementSystem-0.0.1-SNAPSHOT.jar /usr/src/app/JobManagementSystem.jar
