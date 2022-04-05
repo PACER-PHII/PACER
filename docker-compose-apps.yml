@@ -25,7 +25,6 @@ services:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "postgres"
       POSTGRES_DB: "db"
-      
   fhir-filter:
     build:
       context: ./fhirfilter
@@ -54,7 +53,7 @@ services:
       SSL_KEYSTORE_PASSWORD: ""
       #Unique name for the keystore within the program. Same name as the file
       SSL_KEYSTORE_ALIAS: ""
-    command: ["./wait-for-it.sh", "db:5432", "--timeout=300", "--" ,"java","-jar", "/usr/src/app/JobManagementSystem.jar"]
+      # command: ["./wait-for-it.sh", "db:5432", "--timeout=300", "--" ,"java","-jar", "/usr/src/app/JobManagementSystem.jar"]
 
   nginx-cache:
     depends_on:
