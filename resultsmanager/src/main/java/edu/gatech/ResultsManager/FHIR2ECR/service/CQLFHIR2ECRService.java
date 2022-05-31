@@ -320,16 +320,16 @@ public class CQLFHIR2ECRService {
 			Identifier identifier = patient.getIdentifierFirstRep();
 			String identifierSystem = identifier.getSystem() != null ? identifier.getSystem() : "";
 			String identifierValue = identifier.getValue() != null ? identifier.getValue() : "";
-			TypeableID ecrIdentifier = new TypeableID();
-			ecrIdentifier.settype(identifierSystem);
-			ecrIdentifier.setvalue(identifierValue);
-			ecr.getPatient().getid().add(ecrIdentifier);
+			if(!identifierSystem.isEmpty() || !identifierValue.isEmpty()) {
+				TypeableID ecrIdentifier = new TypeableID();
+				ecrIdentifier.settype(identifierSystem);
+				ecrIdentifier.setvalue(identifierValue);
+				ecr.getPatient().getid().add(ecrIdentifier);
+			}
 		}
 		Type deceasedValue = patient.getDeceased();
 		if (deceasedValue != null && deceasedValue instanceof DateTimeType) {
-			log.debug("*~*Andrey*~* Setting deathDate from handlePatient");
 			String deathDate = DateUtil.dateToStdString(((DateTimeType) deceasedValue).getValue());
-			log.debug("*~*Andrey*~* from patient.deceased value:"+deathDate);
 			ecr.getPatient().setdeathDate(deathDate);
 		}
 		for(Extension extension:patient.getExtension()) {
@@ -589,7 +589,7 @@ public class CQLFHIR2ECRService {
 		gatech.edu.STIECR.JSON.Medication ecrMedication = new gatech.edu.STIECR.JSON.Medication();
 		log.info("MEDICATIONSTATEMENT --- Trying medicationStatement: " + medicationStatement.getId());
 		Type medicationCodeUntyped = medicationStatement.getMedication();
-		log.info("MEDICATIONSTATEMENT --- medication code element class: " + medicationCodeUntyped.getClass());
+		//log.info("MEDICATIONSTATEMENT --- medication code element class: " + medicationCodeUntyped.getClass());
 
 		CodeableConcept code = null;
 
@@ -609,30 +609,28 @@ public class CQLFHIR2ECRService {
 			code = medication.getCode();
 		}
 		if (code != null && !code.getCoding().isEmpty()) {
-			log.info("MEDICATIONSTATEMENT --- Trying coding: " + code.getCodingFirstRep().getDisplay());
+			log.info("MEDICATIONSTATEMENT   --- Trying coding: " + code.getCodingFirstRep().getDisplay());
 			gatech.edu.STIECR.JSON.CodeableConcept concept = FHIRCoding2ECRConcept(code.getCodingFirstRep());
-			log.info("MEDICATIONSTATEMENT --- Translated to ECRconcept:" + concept.toString());
+			log.info("MEDICATIONSTATEMENT   --- Translated to ECRconcept:" + concept.toString());
 			ecrMedication.setCode(concept.getcode());
 			ecrMedication.setSystem(concept.getsystem());
 			ecrMedication.setDisplay(concept.getdisplay());
 			ecrCode.setcode(concept.getcode());
 			ecrCode.setsystem(concept.getsystem());
 			ecrCode.setdisplay(concept.getdisplay());
-			log.info("MEDICATIONSTATEMENT --- ECRCode: " + ecrCode);
 			if (!ecr.getPatient().getMedicationProvided().contains(ecrMedication)) {
-				log.info("MEDICATIONSTATEMENT --- Found New Entry: " + ecrCode);
 				ecr.getPatient().getMedicationProvided().add(ecrMedication);
 			} else {
-				log.info("MEDICATIONSTATEMENT --- Didn't Match or found duplicate! " + ecrCode);
+				log.info("MEDICATIONSTATEMENT   --- found duplicate! Discarding code " + ecrCode);
 			}
 			for (Dosage dosageInstruction : medicationStatement.getDosage()) {
 				gatech.edu.STIECR.JSON.Dosage ecrDosage = new gatech.edu.STIECR.JSON.Dosage();
 				Type doseUntyped = dosageInstruction.getDose();
 				if (doseUntyped != null) {
-					log.info("MEDICATIONSTATEMENT --- Found Dosage: " + doseUntyped.toString());
+					log.info("MEDICATIONSTATEMENT   --- Found Dosage: " + doseUntyped.toString());
 					if (doseUntyped instanceof SimpleQuantity) {
 						SimpleQuantity doseTyped = (SimpleQuantity) doseUntyped;
-						log.info("MEDICATIONSTATEMENT --- Dosage is of SimpleQuentity Type");
+						log.info("MEDICATIONSTATEMENT   --- Dosage is of SimpleQuentity Type");
 						ecrDosage.setValue(doseTyped.getValue().toString());
 						ecrDosage.setUnit(doseTyped.getUnit());
 					}
@@ -663,13 +661,13 @@ public class CQLFHIR2ECRService {
 					ecrMedication.setDosage(ecrDosage);
 				}
 				else {
-					log.info("MEDICATIONSTATEMENT --- DOSE NOT FOUND.");
+					log.info("MEDICATIONSTATEMENT   --- DOSE NOT FOUND.");
 				}
 			}
 			if (!medicationStatement.getDateAssertedElement().isEmpty()) {
 				if (medicationStatement.getDateAsserted() != null) {
 					String dateTimeAsString = DateUtil.dateTimeToStdString(medicationStatement.getDateAsserted());
-					log.info("MEDICATIONSTATEMENT  --- Found Medication Date: " + dateTimeAsString);
+					log.info("MEDICATIONSTATEMENT    --- Found Medication Date: " + dateTimeAsString);
 					ecrMedication.setDate(dateTimeAsString);
 				}
 				log.info("MEDICATIONSTATEMENT  --- ECRCode: " + ecrCode);
@@ -678,7 +676,7 @@ public class CQLFHIR2ECRService {
 				handleConditionConceptCode(ecr, medicationStatement.getReasonCodeFirstRep());
 			}
 			if (!ecr.getPatient().getMedicationProvided().contains(ecrMedication)) {
-				log.info("MEDICATIONSTATEMENT  --- Found New Entry: " + ecrCode);
+				log.info("MEDICATIONSTATEMENT    --- Found New Entry: " + ecrCode);
 				ecr.getPatient().getMedicationProvided().add(ecrMedication);
 			} else {
 				log.info("MEDICATIONSTATEMENT  --- Didn't Match or found duplicate! " + ecrCode);
@@ -1049,14 +1047,14 @@ public class CQLFHIR2ECRService {
 	
 	private boolean referenceMatchesResource(Resource resource,Reference reference) {
 		IIdType id = reference.getReferenceElement();
-		log.debug("REFERENCEMATCHESRESOURCE --- Resource:" + resource);
+		/*log.debug("REFERENCEMATCHESRESOURCE --- Resource:" + resource);
 		log.debug("REFERENCEMATCHESRESOURCE --- Reference:" + reference);
 		log.debug("REFERENCEMATCHESRESOURCE --- Reference.getReferenceElement:" + id);
 		log.debug("REFERENCEMATCHESRESOURCE --- Reference.getReferenceElement.getIdPart:" + id.getIdPart());
 		log.debug("REFERENCEMATCHESRESOURCE --- Resource.getIdElement:" + resource.getIdElement());
 		log.debug("REFERENCEMATCHESRESOURCE --- Resource.getIdElement.getIdPart:" + resource.getIdElement().getIdPart());
 		log.debug("REFERENCEMATCHESRESOURCE --- Reference.getReferenceElement.getResourceType:" + id.getResourceType());
-		log.debug("REFERENCEMATCHESRESOURCE --- Resource.getResourceType():" + resource.getResourceType().toString());
+		log.debug("REFERENCEMATCHESRESOURCE --- Resource.getResourceType():" + resource.getResourceType().toString()); */
 		if (id == null || resource.getIdElement() == null) {
 			return false;
 		}
