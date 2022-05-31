@@ -7,32 +7,17 @@ The system has 2 major configurable feature points: a Clinical Query Language (C
 Software requirements
 * Docker-CE (Community Edition). Refer to https://docs.docker.com/install/ for installation instructions
 * Docker-Compose, version 1.3 or later. Refer to https://docs.docker.com/compose/install/ for installation instructions.
-* Openssl for creating keystore file
+
 ## Configuring PACER for your environment
 Before installing PACER you need to configure a few entries in order to point PACER to your data sources.
 In the ```docker-compose-apps.yml``` file...
 * Update the ```CQL_EXECUTION_DATA_SERVICE``` to point to your base FHIR URL.
 * If you have a FHIR terminology service, or if you rown FHIR server acts as a terminology service, update the ```CQL_EXECUTION_TERMINOLOGY_SERVICE``` to a different base FHIR URL.
 * Additionally, if you choose to use a seperate terminology service, you must either update or remove the ```CQL_EXECUTION_TERMINOLOGY_USER``` and ```CQL_EXECUTION_TERMINOLOGY_PASS``` credentials
-* If you are using a fhir service with a **ConceptMap/$translate** operation, update ```MAPPING_TERMINOLOGY_URL``` to the fhir server's base plus the /ConceptMap/ resource URL component, as shown in the placeholder value.
-* In addition, update the ```AUTH_TYPE``` environment variable with either new Basic credentials in form of **Basic $username:$password**, or leave empty to disable authentication to the translation service.
-* Finally, you must also update the ```CQL_EXECUTION_CODEMAPPER_USER``` and ```CQL_EXECUTION_CODEMAPPER_PASS``` to the basic credentials as well.
-* In order to define the actual mapping, you must create a new flat-key json object in the ```CQL_EXECUTION_CODEMAPPER_SYSTEMS_MAP``` variable. Each key is a source system, and each value is the target system by which it will be mapped too. In the example, *http://www.nlm.nih.gov/research/umls/rxnorm* is the **source** and *http://hl7.org/fhir/ndfrt* is the **target**.
-## Enabling SSL
-Installing PACER also requires enabling SSL with a provided SSL key.
-### Creating a PKCS12 Keystore file
-PACER is developed in the java langauge, and java's virtual machine environment maintains a unique management file format for keys, called a PKCS12 Keystore file.
-### Create a PKCS12 Keystore file using openssl
-* In a terminal, run ```openssl pkcs12 -export -in mykeycertificate.pem -out mykeystore.p12 -name 'myAlias'```
-* If you have a privake key file as well use a -inkey flag: ```openssl pkcs12 -export -in cert.pem -inkey cert.key -name 'myAlias' -out mykeystore.p12```
-* You will be prompted to create a password, this **note password for use later**
-* Place the output .p12 file into ```PACER/jobmanagementsystem``` project folder
-#### Set environment configuration within docker-compose-apps.yml
-Search the docker-compose-apps.yml file for these environment settings.
-* ```SSL_KEYSTORE_FILE``` This is the name of the keystore file you created. In the example above, it is ```mykeystore.p12```
-* ```SSL_KEYSTORE_ALIAS``` This is alias name you set for the keystore in the -name flag on generation. In the example above, it is ```myAlias```
-* ```SSL_KEYSTORE_PASSWORD``` This is the password you associated to the keystore on generation.
-
+  * If you are using a fhir service with a **ConceptMap/$translate** operation, update ```MAPPING_TERMINOLOGY_URL``` to the fhir server's base plus the /ConceptMap/ resource URL component, as shown in the placeholder value.
+  * In addition, update the ```AUTH_TYPE``` environment variable with either new Basic credentials in form of **Basic $username:$password**, or leave empty to disable authentication to the translation service.
+  * Finally, you must also update the ```CQL_EXECUTION_CODEMAPPER_USER``` and ```CQL_EXECUTION_CODEMAPPER_PASS``` to the basic credentials as well.
+  * In order to define the actual mapping, you must create a new flat-key json object in the ```CQL_EXECUTION_CODEMAPPER_SYSTEMS_MAP``` variable. Each key is a source system, and each value is the target system by which it will be mapped too. In the example, *http://www.nlm.nih.gov/research/umls/rxnorm* is the **source** and *http://hl7.org/fhir/ndfrt* is the **target**.
 ## Installation Instructions
 * Pacer consists of 2 seperate docker-compose files: ```docker-compose-db.yml``` and ```docker-compose-apps.yml```. ```docker-compose-db.yml``` contains the configuration information for the database, and should be built and ran first before the ```docker-compose-apps.yml``` script. ```docker-compose-apps.yml``` consist of the application components that manage the PACER workflow.
 * From the command line, run ```docker-compose -f docker-compose-db.yml build``` and ```docker-compose -f docker-compose-apps.yml build``` from the top of the project. This will build from the source folders deployable images for 6 different containers: cql-storage, cql-execution, db, fhir-filter, job-management-system, results-manager.

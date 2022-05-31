@@ -124,6 +124,13 @@ public class CQLFHIR2ECRService {
 						handleCondition(ecr,condition);
 						break;
 					}
+				case "Immunization":
+					if(!filteredResults.equalsIgnoreCase("{}")) {
+						filteredResults = fhirFilterService.applyFilter(result.get("result"),false);
+						Immunization immunization = (Immunization)parser3.parseResource(filteredResults);
+						handleImmunization(ecr,immunization);
+						break;
+					}
 				case "MedicationAdministration":
 					if(!filteredResults.equalsIgnoreCase("{}")) {
 						filteredResults = fhirFilterService.applyFilter(result.get("result"),false);

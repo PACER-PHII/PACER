@@ -21,6 +21,7 @@ import edu.gatech.ResultsManager.cql.execution.service.CQLExecutionService;
 import edu.gatech.ResultsManager.cql.storage.service.CQLStorageService;
 import edu.gatech.ResultsManager.fhir.identifier.service.PatientIdentifierService;
 import gatech.edu.STIECR.JSON.ECR;
+import gatech.edu.STIECR.JSON.TypeableID;
 
 @RestController
 public class ResultsManagerController{
@@ -70,6 +71,17 @@ public class ResultsManagerController{
 			log.error(e.getMessage());
 			return new ResponseEntity<ECR>(ecr,HttpStatus.UNPROCESSABLE_ENTITY);
 		}
+		//Once identifier has been established with a patient, assign the identifier to the ecr record.
+		TypeableID originalIdentifier = new TypeableID();
+		String[] identifierParts = identifier.split("\\|"); 
+		if(identifierParts.length == 2) {
+			originalIdentifier.settype(identifierParts[0]);
+			originalIdentifier.setvalue(identifierParts[1]);
+		}
+		else {
+			originalIdentifier.setvalue(identifierParts[0]);
+		}
+		ecr.getPatient().getid().add(originalIdentifier);
 		log.debug("patientId from patientIdentifierServer:"+patientId);
 		JsonNode cqlResults = cqlExecutionService.evaluateCQL(cqlBody,patientId,labOrderDate);
 		ECR ecrFromCQL = cqlFhir2EcrService.CQLFHIRResultsToECR((ArrayNode)cqlResults);
