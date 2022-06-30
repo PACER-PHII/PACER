@@ -1,4 +1,4 @@
-library ECR version '1.3'
+library ECR version '1.4'
 using FHIR version '3.0.0'
 include FHIRHelpers version '3.0.0' called FHIRHelpers
 codesystem "ICD9PROC": 'http://hl7.org/fhir/sid/icd-9-proc'
@@ -24,13 +24,14 @@ define "Immunization_Codes_4": Concept {Code '832682' from rxnorm, Code '1597103
 
 define "Macrolides_0": Concept { Code '315090' from rxnorm, Code '240741' from rxnorm, Code '686355' from rxnorm, Code '597455' from rxnorm, Code '598006' from rxnorm, Code '204844' from rxnorm, Code '577378' from rxnorm, Code '487129' from rxnorm, Code '310157' from rxnorm, Code '686405' from rxnorm, Code '686406' from rxnorm, Code '686400' from rxnorm, Code '141962' from rxnorm, Code '308460' from rxnorm, Code '141963' from rxnorm }
 define "Macrolides_1": Concept { Code '861416' from rxnorm, Code '1668238' from rxnorm, Code '245242' from rxnorm, Code '245240' from rxnorm, Code '1668264' from rxnorm, Code '248656' from rxnorm, Code '310154' from rxnorm, Code '686383' from rxnorm, Code '310155' from rxnorm, Code '197516' from rxnorm, Code '309322' from rxnorm, Code '686418' from rxnorm, Code '359385' from rxnorm, Code '197517' from rxnorm, Code '197650' from rxnorm, Code '308459' from rxnorm }
-define "Levofloxacin": Concept { Code '1665507' from rxnorm, Code '1665519' from rxnorm, Code '1665497' from rxnorm, Code '199884' from rxnorm, Code '477391' from rxnorm, Code '311296' from rxnorm, Code '1665515' from rxnorm, Code '1665517' from rxnorm, Code '199885' from rxnorm, Code '82122' from rxnorm }
-define "Doxycycline_0": Concept { Code '434018' from rxnorm, Code '348870' from rxnorm, Code '406524' from rxnorm, Code '1649990' from rxnorm, Code '1650143' from rxnorm, Code '1653433' from rxnorm, Code '1650444' from rxnorm, Code '1650446' from rxnorm, Code '1650142' from rxnorm, Code '1791505' from rxnorm, Code '348869' from rxnorm, Code '1998483' from rxnorm, Code '1423080' from rxnorm, Code '1649405' from rxnorm, Code '1649988' from rxnorm, Code '1649425' from rxnorm, Code '757466' from rxnorm, Code '1649401' from rxnorm, Code '799048' from rxnorm }
-define "Doxycycline_1": Concept { Code '757464' from rxnorm, Code '901399' from rxnorm, Code '1652674' from rxnorm, Code '1652673' from rxnorm, Code '728207' from rxnorm, Code '757460' from rxnorm, Code '835700' from rxnorm, Code '597521' from rxnorm, Code '597520' from rxnorm, Code '700408' from rxnorm, Code '1801138' from rxnorm, Code '310026' from rxnorm, Code '310027' from rxnorm, Code '310028' from rxnorm, Code '1650030' from rxnorm, Code '283535' from rxnorm, Code '1650032' from rxnorm, Code '1649429' from rxnorm , Code '3640' from rxnorm }
-define "Azithromycin": Concept { Code '430129' from musclocal, Code '15284' from musclocal, Code '20943' from musclocal, Code '17428' from musclocal, Code '18631' from rxnorm }
-define "Ceftriaxone": Concept { Code '600868' from musclocal, Code '600720' from musclocal, Code '400107' from musclocal}
-define "Erythromycin": Concept { Code '4053' from rxnorm, Code '2193' from rxnorm }
-define "Ofloxcin": Concept { Code '7623' from rxnorm }
+define "Levofloxacin": Concept { Code '1665507' from rxnorm, Code '1665519' from rxnorm, Code '1665497' from rxnorm, Code '199884' from rxnorm, Code '477391' from rxnorm, Code '311296' from rxnorm, Code '1665515' from rxnorm, Code '1665517' from rxnorm, Code '199885' from rxnorm, Code '82122' from rxnorm, Code '211815' from rxnorm, Code '127992' from rxnorm, Code '284854' from rxnorm, Code '545119' from rxnorm}
+define "Doxycycline_0": Concept { Code '434018' from rxnorm, Code '348870' from rxnorm, Code '406524' from rxnorm, Code '1649990' from rxnorm, Code '1650143' from rxnorm, Code '1653433' from rxnorm, Code '1650444' from rxnorm, Code '1650446' from rxnorm, Code '1650142' from rxnorm, Code '1791505' from rxnorm, Code '348869' from rxnorm, Code '1998483' from rxnorm, Code '1423080' from rxnorm, Code '1649405' from rxnorm, Code '1649988' from rxnorm, Code '1649425' from rxnorm, Code '757466' from rxnorm, Code '1649401' from rxnorm, Code '799048' from rxnorm, Code '3640' from rxnorm }
+define "Doxycycline_1": Concept { Code '757464' from rxnorm, Code '901399' from rxnorm, Code '1652674' from rxnorm, Code '1652673' from rxnorm, Code '728207' from rxnorm, Code '757460' from rxnorm, Code '835700' from rxnorm, Code '597521' from rxnorm, Code '597520' from rxnorm, Code '700408' from rxnorm, Code '1801138' from rxnorm, Code '310026' from rxnorm, Code '310027' from rxnorm, Code '310028' from rxnorm, Code '1650030' from rxnorm, Code '283535' from rxnorm, Code '1650032' from rxnorm, Code '1649429' from rxnorm, Code '203122' from rxnorm}
+define "Azithromycin": Concept { Code '430129' from musclocal, Code '15284' from musclocal, Code '20943' from musclocal, Code '17428' from musclocal, Code '18631' from rxnorm, Code '196474' from rxnorm, Code '212446' from rxnorm, Code '308460' from rxnorm, Code '539819' from rxnorm, Code '539822' from rxnorm, Code '598022' from rxnorm, Code '628527' from rxnorm, Code '628530' from rxnorm, Code '706869' from rxnorm, Code '706859' from rxnorm, Code '749783' from rxnorm, Code '750149' from rxnorm, Code '1150984' from rxnorm}
+define "Ceftriaxone": Concept { Code '2193' from rxnorm, Code '9449' from rxnorm}
+define "Erythromycin_0": Concept { Code '4053' from rxnorm, Code '2193' from rxnorm, Code '56710' from rxnorm, Code '115423' from rxnorm, Code '151714' from rxnorm, Code '202607' from rxnorm, Code '202608' from rxnorm, Code '202609' from rxnorm, Code '202610' from rxnorm, Code '202612' from rxnorm, Code '202615' from rxnorm, Code '202616' from rxnorm, Code '202617' from rxnorm, Code '202618' from rxnorm, Code '214913' from rxnorm, Code '216428' from rxnorm}
+define "Erythromycin_1": Concept { Code '216479' from rxnorm, Code '216828' from rxnorm, Code '216926' from rxnorm, Code '216964' from rxnorm, Code '219728' from rxnorm, Code '220280' from rxnorm, Code '225742' from rxnorm, Code '226233' from rxnorm, Code '353619' from rxnorm, Code '584531' from rxnorm, Code '598006' from rxnorm, Code '848114' from rxnorm}
+define "Ofloxcin": Concept { Code '7623' from rxnorm, Code '198048' from rxnorm, Code '202458' from rxnorm, Code '207208' from rxnorm, Code '218853' from rxnorm }
 define "Sti Symptoms": Concept { Code 'N34' from icd10cm, Code 'N34.1' from icd10cm, Code 'N34.2' from icd10cm, Code 'N34.1' from icd10cm, Code 'R36' from icd10cm, Code 'R36.0' from icd10cm, Code 'R36.9' from icd10cm}
 
 context Patient
@@ -91,7 +92,9 @@ define "44.Medication_Request.MedicationProvided.3_1": [MedicationStatement: Cod
 define "44.Medication_Request.MedicationProvided.3": "44.Medication_Request.MedicationProvided.3_0" union "44.Medication_Request.MedicationProvided.3_1"
 define "44.Medication_Request.MedicationProvided.4": [MedicationStatement: Code in "Azithromycin"]
 define "44.Medication_Request.MedicationProvided.5": [MedicationStatement: Code in "Ceftriaxone"]
-define "44.Medication_Request.MedicationProvided.6": [MedicationStatement: Code in "Erythromycin"]
+define "44.Medication_Request.MedicationProvided.6_0": [MedicationStatement: Code in "Erythromycin_0"]
+define "44.Medication_Request.MedicationProvided.6_1": [MedicationStatement: Code in "Erythromycin_1"]
+define "44.Medication_Request.MedicationProvided.6": "44.Medication_Request.MedicationProvided.6_0" union "44.Medication_Request.MedicationProvided.6_1"
 define "44.Medication_Request.MedicationProvided.7": [MedicationStatement: Code in "Ofloxcin"]
 define "36.Encounter.Admission_DateTime": "FirstEncounter".period.start.value
 define "37.Encounter.Visit_DateTime": "FirstEncounter".period.start.value
