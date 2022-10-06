@@ -5,9 +5,14 @@ import ca.uhn.fhir.jpa.provider.dstu3.TerminologyUploaderProviderDstu3;
 import ca.uhn.fhir.rest.gclient.*;
 import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.param.TokenParamModifier;
+
+import org.hl7.fhir.dstu3.model.CapabilityStatement;
 import org.hl7.fhir.dstu3.model.Enumeration;
+import org.hl7.fhir.dstu3.model.MedicationStatement;
 import org.hl7.fhir.dstu3.model.Patient;
 import org.hl7.fhir.dstu3.model.ValueSet;
+import org.hl7.fhir.dstu3.model.CapabilityStatement.CapabilityStatementRestResourceComponent;
+import org.hl7.fhir.dstu3.model.CapabilityStatement.CapabilityStatementRestResourceSearchParamComponent;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.json.simple.JSONObject;
 import org.opencds.cqf.cql.runtime.Code;
@@ -225,6 +230,19 @@ public class FhirDataProviderStu3 extends BaseDataProviderStu3 {
             }
         }
         String returnString = "";
+        //Epic issue with querying non-active medications in stu3
+        if(dataType.equalsIgnoreCase("MedicationStatement") || dataType.equalsIgnoreCase("MedicationRequest")){
+            CapabilityStatement conf = fhirClient.capabilities().ofType(CapabilityStatement.class).execute();
+            for(CapabilityStatementRestResourceComponent csrrc:conf.getRestFirstRep().getResource()){
+                if (csrrc.getType().equalsIgnoreCase(dataType)){
+                    for(CapabilityStatementRestResourceSearchParamComponent csrrspc:csrrc.getSearchParam()){
+                        if(csrrspc.getName().equalsIgnoreCase("status")){
+                            params.append("&status=active,on-hold,completed,stopped");
+                        }
+                    }
+                }
+            }
+        }
         if (params.length() > 0) {
             returnString = String.format("%s?%s", dataType, params.toString());
         }
