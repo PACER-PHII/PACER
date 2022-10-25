@@ -334,12 +334,22 @@ public class CQLFHIR2ECRService {
 		}
 		for(Extension extension:patient.getExtension()) {
 			if(extension.getUrlElement().equals("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race")) {
-				Coding coding = (Coding)extension.getExtensionFirstRep().getValue();
-				ecr.getPatient().setrace(new gatech.edu.STIECR.JSON.CodeableConcept(coding.getSystem(),coding.getDisplay(),coding.getCode()));
+				for(Extension subExtension:extension.getExtension()){
+					if(subExtension.getUrl().equalsIgnoreCase("ombCategory")){
+						//Todo: handle multiple ombCategory assignings later
+						Coding coding = (Coding)subExtension.getValue();
+						ecr.getPatient().setrace(new gatech.edu.STIECR.JSON.CodeableConcept(coding.getSystem(),coding.getDisplay(),coding.getCode()));
+					}
+				}
 			}
 			if(extension.getUrlElement().equals("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity")) {
-				Coding coding = (Coding)extension.getExtensionFirstRep().getValue();
-				ecr.getPatient().setethnicity(new gatech.edu.STIECR.JSON.CodeableConcept(coding.getSystem(),coding.getDisplay(),coding.getCode()));
+				for(Extension subExtension:extension.getExtension()){
+					if(subExtension.getUrl().equalsIgnoreCase("ombCategory")){
+						//Todo: handle multiple ombCategory assignings later
+						Coding coding = (Coding)subExtension.getValue();
+						ecr.getPatient().setethnicity(new gatech.edu.STIECR.JSON.CodeableConcept(coding.getSystem(),coding.getDisplay(),coding.getCode()));
+					}
+				}
 			}
 		}
 		PatientCommunicationComponent preferredCommunication = null;
