@@ -58,12 +58,25 @@ public class ResultsManagerController{
 		log.debug("*-* Request param cqlType:" + cqlType);
 		log.debug("*-* Request param ecrId:" + ecrId);
 		log.debug("*-* Request param labOrderName:" + labOrderDate);
-		String cqlBody = cqlStorageService.requestCQL(cqlType);
-		//ECR ecr = ecrStorageService.getECR(firstName, lastName);
+		//Setup base ecr response
 		ECR ecr = new ECR();
 		if(ecrId != null && !ecrId.isEmpty()) {
 			ecr.setECRId(ecrId);
 		}
+		//Set identifier if the identifier is not empty
+		if(identifier != null && !identifier.isEmpty()){
+			TypeableID originalIdentifier = new TypeableID();
+			String[] identifierParts = identifier.split("\\|"); 
+			if(identifierParts.length == 2) {
+				originalIdentifier.settype(identifierParts[0]);
+				originalIdentifier.setvalue(identifierParts[1]);
+			}
+			else {
+				originalIdentifier.setvalue(identifierParts[0]);
+			}
+			ecr.getPatient().getid().add(originalIdentifier);
+		}
+		//Retrieve patient id from identifier
 		String patientId;
 		try {
 			patientId = patientIdentifierService.getFhirIdByIdentifier(identifier);
@@ -71,17 +84,9 @@ public class ResultsManagerController{
 			log.error(e.getMessage());
 			return new ResponseEntity<ECR>(ecr,HttpStatus.UNPROCESSABLE_ENTITY);
 		}
-		//Once identifier has been established with a patient, assign the identifier to the ecr record.
-		TypeableID originalIdentifier = new TypeableID();
-		String[] identifierParts = identifier.split("\\|"); 
-		if(identifierParts.length == 2) {
-			originalIdentifier.settype(identifierParts[0]);
-			originalIdentifier.setvalue(identifierParts[1]);
-		}
-		else {
-			originalIdentifier.setvalue(identifierParts[0]);
-		}
-		ecr.getPatient().getid().add(originalIdentifier);
+		//retrieve cql from cqlstorage
+		String cqlBody = cqlStorageService.requestCQL(cqlType);
+		//ECR ecr = ecrStorageService.getECR(firstName, lastName);
 		log.debug("patientId from patientIdentifierServer:"+patientId);
 		JsonNode cqlResults = cqlExecutionService.evaluateCQL(cqlBody,patientId,labOrderDate);
 		ECR ecrFromCQL = cqlFhir2EcrService.CQLFHIRResultsToECR((ArrayNode)cqlResults);
