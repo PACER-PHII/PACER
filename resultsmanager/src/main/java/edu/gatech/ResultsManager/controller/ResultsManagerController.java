@@ -82,7 +82,7 @@ public class ResultsManagerController{
 			patientId = patientIdentifierService.getFhirIdByIdentifier(identifier);
 		} catch (Exception e) {
 			log.error(e.getMessage());
-			return new ResponseEntity<ECR>(ecr,HttpStatus.UNPROCESSABLE_ENTITY);
+			return new ResponseEntity<ECR>(ecr,HttpStatus.OK);
 		}
 		//retrieve cql from cqlstorage
 		String cqlBody = cqlStorageService.requestCQL(cqlType);
