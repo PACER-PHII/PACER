@@ -183,7 +183,7 @@ public class CQLFHIR2ECRService {
 	public void initGlobalBundleFromResults(ECR ecr,ArrayNode cqlResults) {
 		globalBundle = new Bundle();
 		for(JsonNode result:cqlResults) {
-			log.debug("Result:"+result.toString());
+			//log.debug("Result:"+result.toString());
 			if(result.get("resultType") != null) {
 				String resultType = result.get("resultType").asText();
 				String filteredResults = "";
@@ -205,7 +205,7 @@ public class CQLFHIR2ECRService {
 				case "FhirBundleCursorStu3":
 				case "List":
 					String listString = result.get("result").asText();
-					log.debug("HANDLE LIST --- inputString:"+listString);
+					//log.debug("HANDLE LIST --- inputString:"+listString);
 					
 					//Check for json list. Handling only json resources.
 					if(listString.substring(0, 2).equalsIgnoreCase("[{")) {
@@ -231,7 +231,7 @@ public class CQLFHIR2ECRService {
 	}
 	
 	void handleList(ECR ecr,String list,String keyName) {
-		log.debug("HANDLE LIST --- inputString:"+list);
+		//log.debug("HANDLE LIST --- inputString:"+list);
 		//Check for json list. Handling only json resources.
 		if(list.substring(0, 2).equalsIgnoreCase("[{")) {
 			ArrayNode arrayNode = null;
@@ -243,7 +243,7 @@ public class CQLFHIR2ECRService {
 			}
 			Bundle inputBundle = new Bundle();
 			for(JsonNode node : arrayNode) {
-				log.debug("HANDLE LIST --- node:"+node.toString());
+				//log.debug("HANDLE LIST --- node:"+node.toString());
 				String filteredResource = fhirFilterService.applyFilter(node,true);
 				IBaseResource resource = parser3.parseResource(filteredResource);
 				inputBundle.addEntry(new BundleEntryComponent().setResource((Resource)resource));
@@ -894,7 +894,7 @@ public class CQLFHIR2ECRService {
 	}
 	
 	public void addStringResultByResultKey(ECR ecr,JsonNode result) {
-		log.debug("STRING --- handling string:"+result);
+		//log.debug("STRING --- handling string:"+result);
 		if(result.get("resultType").toString().equalsIgnoreCase("Null"))
 			return;
 		String value = result.get("result").asText();

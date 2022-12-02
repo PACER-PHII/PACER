@@ -86,7 +86,10 @@ public class CQLExecutionService {
 		for(Iterator<Entry<String, JsonNode>> jsonFields = requestJson.fields();
 			    jsonFields.hasNext();) {
 			Entry<String, JsonNode> keyValue = jsonFields.next();
-			log.debug("*-* cql execution request param: " + keyValue.getKey() + ":::" + keyValue.getValue().asText());
+			//We don't have to reshare the cql body every time
+			if(!keyValue.getKey().equalsIgnoreCase("code")){
+				log.debug("*-* cql execution request param: " + keyValue.getKey() + ":::" + keyValue.getValue().asText());
+			}
 		}
 		String cQLResultString = restTemplate.postForEntity(uriComponents.toUriString(), entity, String.class).getBody();
 		JsonNode resultsJson = null;
