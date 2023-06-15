@@ -47,6 +47,8 @@ services:
       JDBC_PASSWORD: "postgres"
       BASIC_USERNAME: "username"
       BASIC_PASSWORD: "password"
+      #Uses 'true' or 'false' to enable or disable ssl
+      SSL_ENABLED: "true"
       #Provide an .p12 SSL Keystore file for JMS to use for SSL
       SSL_KEYSTORE_FILE: ""
       #When created, the p12 file will prompt user to provide a password
