@@ -86,14 +86,14 @@ public class ResultsManagerController{
 			log.debug("patientId from patientIdentifierServer:"+patientId);
 			//retrieve cql from cqlstorage
 			cqlBody = cqlStorageService.requestCQL(cqlType);
+			//Create CQLConceptCapture for matching codeableconcepts in results
+			cqlConceptCaptureService.processCQL(cqlBody);
+			ECR ecrDirect = directFhirECRCreator.queryFhirServerAndCreateECR(patientId);
+			ecr.update(ecrDirect);
 		} catch (Exception e) {
 			log.error(e.getMessage());
 			return new ResponseEntity<ECR>(ecr,HttpStatus.OK);
 		}
-		//Create CQLConceptCapture for matching codeableconcepts in results
-		cqlConceptCaptureService.processCQL(cqlBody);
-		ECR ecrDirect = directFhirECRCreator.queryFhirServerAndCreateECR(patientId);
-		ecr.update(ecrDirect);
 		//ecrStorageService.storeECR(ecr.toString());
 		return new ResponseEntity<ECR>(ecr,HttpStatus.OK);
 	}
