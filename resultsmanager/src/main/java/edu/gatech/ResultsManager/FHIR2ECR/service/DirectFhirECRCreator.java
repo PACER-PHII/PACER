@@ -2,6 +2,7 @@ package edu.gatech.ResultsManager.FHIR2ECR.service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -141,7 +142,7 @@ public class DirectFhirECRCreator {
 
     public ECR collectAndMapDiagnosis(ECR ecr, String patientResourceId){
         Map<String, List<CodeableConcept> > conceptMap = cqlConceptCaptureService.getConceptDefMap();
-        List<String> conditionConcepts = List.of("Chlamydia_Codes_0","Chlamydia_Codes_1","Chlamydia_Codes_2","Gonorrhea_Codes_0","Gonorrhea_Codes_1","Gonorrhea_Codes_2");
+        List<String> conditionConcepts = Arrays.asList("Chlamydia_Codes_0","Chlamydia_Codes_1","Chlamydia_Codes_2","Gonorrhea_Codes_0","Gonorrhea_Codes_1","Gonorrhea_Codes_2");
         for(String concept:conditionConcepts){
             List<CodeableConcept> conditionCodes = conceptMap.get(concept);
             List<Condition> conditionED = directFhirQueryService.conditionSearchEncounterDiagnosis(patientResourceId, conditionCodes);
@@ -158,7 +159,7 @@ public class DirectFhirECRCreator {
 
     public ECR collectAndMapSymptoms(ECR ecr, String patientResourceId){
         Map<String, List<CodeableConcept> > conceptMap = cqlConceptCaptureService.getConceptDefMap();
-        List<String> conditionConcepts = List.of("Sti Symptoms");
+        List<String> conditionConcepts = Arrays.asList("Sti Symptoms");
         for(String concept:conditionConcepts){
             List<CodeableConcept> conditionCodes = conceptMap.get(concept);
             List<Condition> conditionED = directFhirQueryService.conditionSearchEncounterDiagnosis(patientResourceId, conditionCodes);
