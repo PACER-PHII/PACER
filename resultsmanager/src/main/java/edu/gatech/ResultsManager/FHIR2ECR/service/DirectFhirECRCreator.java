@@ -72,6 +72,7 @@ public class DirectFhirECRCreator {
     }
     //Mapping Resource Functions
     public ECR mapPatientData(ECR ecr, String patientResourceId){
+        log.debug("Mapping Patient Data");
         Patient patient = directFhirQueryService.patientRead(patientResourceId);
         if(patient.getBirthDate() != null) {
 			ecr.getPatient().setbirthDate(patient.getBirthDate().toString());
@@ -141,6 +142,7 @@ public class DirectFhirECRCreator {
     }
 
     public ECR collectAndMapDiagnosis(ECR ecr, String patientResourceId){
+        log.debug("Collecting and Mapping Diagnosis");
         Map<String, List<CodeableConcept> > conceptMap = cqlConceptCaptureService.getConceptDefMap();
         List<String> conditionConcepts = Arrays.asList("Chlamydia_Codes_0","Chlamydia_Codes_1","Chlamydia_Codes_2","Gonorrhea_Codes_0","Gonorrhea_Codes_1","Gonorrhea_Codes_2");
         for(String concept:conditionConcepts){
@@ -158,6 +160,7 @@ public class DirectFhirECRCreator {
     }
 
     public ECR collectAndMapSymptoms(ECR ecr, String patientResourceId){
+        log.debug("Collecting and Mapping Symptoms");
         Map<String, List<CodeableConcept> > conceptMap = cqlConceptCaptureService.getConceptDefMap();
         List<String> conditionConcepts = Arrays.asList("Sti Symptoms");
         for(String concept:conditionConcepts){
@@ -216,6 +219,7 @@ public class DirectFhirECRCreator {
     }
 
     public ECR collectAndMapImmunization(ECR ecr, String patientResourceId){
+        log.debug("Collecting and Mapping Immunization");
         List<Immunization> immunizations = directFhirQueryService.immunizationSearch(patientResourceId);
         for(Immunization i:immunizations){
             mapImmunization(ecr,i);
@@ -245,7 +249,7 @@ public class DirectFhirECRCreator {
     }
 
     public ECR collectAndMapMedicationRequest(ECR ecr, String patientResourceId){
-
+        log.debug("Collecting and Mapping Medication Request");
         List<MedicationRequest> medicationRequests = directFhirQueryService.medicationRequestSearch(patientResourceId);
         for(MedicationRequest mr:medicationRequests){
             mapMedicationRequest(ecr,mr);
