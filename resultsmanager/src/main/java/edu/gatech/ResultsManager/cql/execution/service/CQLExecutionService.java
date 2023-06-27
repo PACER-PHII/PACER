@@ -26,8 +26,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import edu.gatech.ResultsManager.FHIR2ECR.service.CQLFHIR2ECRService;
-
 @Service
 @Configuration
 @ConfigurationProperties(prefix="cql.execution")
@@ -96,7 +94,6 @@ public class CQLExecutionService {
 		try {
 			resultsJson = objectMapper.readTree(cQLResultString);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return resultsJson;

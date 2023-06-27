@@ -1,9 +1,9 @@
 package edu.gatech.ResultsManager.fhir.identifier.service;
 
-import org.hl7.fhir.dstu3.model.Bundle;
-import org.hl7.fhir.dstu3.model.OperationOutcome;
-import org.hl7.fhir.dstu3.model.Patient;
-import org.hl7.fhir.dstu3.model.Resource;
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.OperationOutcome;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,7 @@ public class PatientIdentifierService {
 	@Autowired
 	public PatientIdentifierService(FhirConfig fhirConfig) {
 		this.fhirConfig = fhirConfig;
-		ctx = FhirContext.forDstu3();
+		ctx = FhirContext.forR4();
 	}
 	
 	public String getFhirIdByIdentifier(String identifier) throws Exception {

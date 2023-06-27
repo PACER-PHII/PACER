@@ -1,6 +1,8 @@
 package edu.gatech.ResultsManager.cql.storage.service;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,10 +37,18 @@ public class CQLStorageService {
 	}
 
 	public String requestCQL(String cqlName) {
-		UriComponents uriComponents = UriComponentsBuilder.newInstance()
-				.scheme("http").host(endpoint).port("8080").path("/CQLStorage/CQL").queryParam("name", cqlName).build();
-		log.debug("*-* requesting to cql storage service at:" + uriComponents.toUriString());
-		String responseString = restTemplate.getForEntity(uriComponents.toUriString(), String.class).getBody();
+		URL baseUrl;
+		URL finalUrl;
+		try {
+			baseUrl = new URL(endpoint);
+			finalUrl = new URL(baseUrl, "CQL?name="+cqlName);
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+		log.debug("*-* requesting to cql storage service at:" + finalUrl.toString());
+		String responseString = restTemplate.getForEntity(finalUrl.toString(), String.class).getBody();
 		ObjectNode responseObject = null;
 		try {
 			responseObject = (ObjectNode) objectMapper.readTree(responseString);

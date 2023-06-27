@@ -92,7 +92,7 @@ services:
       CQL_EXECUTION_TERMINOLOGY_USER: "jduke99" #Update to your terminology credentials
       CQL_EXECUTION_TERMINOLOGY_PASS: "v6R4*SsU39" #Update to your terminology credentials
       CQL_EXECUTION_URL: "cql-execution"
-      CQL_STORAGE_URL: "cql-storage"
+      CQL_STORAGE_URL: "cql-storage:8080/CQLStorage/"
       FHIR_FILTER_URL: "fhir-filter"
 
   translateconcept:

@@ -16,8 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
-import edu.gatech.ResultsManager.FHIR2ECR.service.CQLFHIR2ECRService;
+import edu.gatech.ResultsManager.FHIR2ECR.service.DirectFhirECRCreator;
 import edu.gatech.ResultsManager.cql.execution.service.CQLExecutionService;
+import edu.gatech.ResultsManager.cql.processing.service.CQLConceptCaptureService;
 import edu.gatech.ResultsManager.cql.storage.service.CQLStorageService;
 import edu.gatech.ResultsManager.fhir.identifier.service.PatientIdentifierService;
 import gatech.edu.STIECR.JSON.ECR;
@@ -30,17 +31,18 @@ public class ResultsManagerController{
 	CQLStorageService cqlStorageService;
 	PatientIdentifierService patientIdentifierService;
 	CQLExecutionService cqlExecutionService;
-	//ECRStorageService ecrStorageService;
-	CQLFHIR2ECRService cqlFhir2EcrService;
-	
+	CQLConceptCaptureService cqlConceptCaptureService;
+	DirectFhirECRCreator directFhirECRCreator;
+
 	@Autowired
 	public ResultsManagerController(CQLStorageService cqlStorageService, PatientIdentifierService patientIdentifierService, CQLExecutionService cqlExecutionService,
-			CQLFHIR2ECRService cqlFhir2EcrService) {
+			CQLConceptCaptureService cqlConceptCaptureService, DirectFhirECRCreator directFhirECRCreator) {
 		super();
 		this.cqlStorageService = cqlStorageService;
 		this.patientIdentifierService = patientIdentifierService;
 		this.cqlExecutionService = cqlExecutionService;
-		this.cqlFhir2EcrService = cqlFhir2EcrService;
+		this.cqlConceptCaptureService = cqlConceptCaptureService;
+		this.directFhirECRCreator = directFhirECRCreator;
 	}
 	
 	@RequestMapping(value = "/case", method = RequestMethod.POST)
@@ -78,19 +80,20 @@ public class ResultsManagerController{
 		}
 		//Retrieve patient id from identifier
 		String patientId;
+		String cqlBody;
 		try {
 			patientId = patientIdentifierService.getFhirIdByIdentifier(identifier);
+			log.debug("patientId from patientIdentifierServer:"+patientId);
+			//retrieve cql from cqlstorage
+			cqlBody = cqlStorageService.requestCQL(cqlType);
 		} catch (Exception e) {
 			log.error(e.getMessage());
 			return new ResponseEntity<ECR>(ecr,HttpStatus.OK);
 		}
-		//retrieve cql from cqlstorage
-		String cqlBody = cqlStorageService.requestCQL(cqlType);
-		//ECR ecr = ecrStorageService.getECR(firstName, lastName);
-		log.debug("patientId from patientIdentifierServer:"+patientId);
-		JsonNode cqlResults = cqlExecutionService.evaluateCQL(cqlBody,patientId,labOrderDate);
-		ECR ecrFromCQL = cqlFhir2EcrService.CQLFHIRResultsToECR((ArrayNode)cqlResults);
-		ecr.update(ecrFromCQL);
+		//Create CQLConceptCapture for matching codeableconcepts in results
+		cqlConceptCaptureService.processCQL(cqlBody);
+		ECR ecrDirect = directFhirECRCreator.queryFhirServerAndCreateECR(patientId);
+		ecr.update(ecrDirect);
 		//ecrStorageService.storeECR(ecr.toString());
 		return new ResponseEntity<ECR>(ecr,HttpStatus.OK);
 	}
@@ -117,13 +120,5 @@ public class ResultsManagerController{
 
 	public void setCqlExecutionService(CQLExecutionService cqlExecutionService) {
 		this.cqlExecutionService = cqlExecutionService;
-	}
-
-	public CQLFHIR2ECRService getCqlFhir2EcrService() {
-		return cqlFhir2EcrService;
-	}
-
-	public void setCqlFhir2EcrService(CQLFHIR2ECRService cqlFhir2EcrService) {
-		this.cqlFhir2EcrService = cqlFhir2EcrService;
 	}
 }

@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import edu.gatech.ResultsManager.FHIR2ECR.service.CQLFHIR2ECRService;
 import gatech.edu.STIECR.JSON.ECR;
 
 @Service

@@ -5,11 +5,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.hl7.fhir.dstu3.model.Address;
-import org.hl7.fhir.dstu3.model.Age;
-import org.hl7.fhir.dstu3.model.DateTimeType;
-import org.hl7.fhir.dstu3.model.Period;
-import org.hl7.fhir.dstu3.model.StringType;
+import org.hl7.fhir.r4.model.Address;
+import org.hl7.fhir.r4.model.Age;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Period;
+import org.hl7.fhir.r4.model.StringType;
 
 import ca.uhn.fhir.model.api.IDatatype;
 import ca.uhn.fhir.model.primitive.DateTimeDt;
