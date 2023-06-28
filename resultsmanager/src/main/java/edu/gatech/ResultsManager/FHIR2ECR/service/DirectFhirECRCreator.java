@@ -110,7 +110,7 @@ public class DirectFhirECRCreator {
                         ethnicityCodes.add(coding.getCode());
 					}
                     if(ethnicityCodes.size() > 0){
-                        ecr.getPatient().getrace().setcode(ethnicityCodes.stream().collect(Collectors.joining(",")));
+                        ecr.getPatient().getethnicity().setcode(ethnicityCodes.stream().collect(Collectors.joining(",")));
                     }
 				}
 			}
