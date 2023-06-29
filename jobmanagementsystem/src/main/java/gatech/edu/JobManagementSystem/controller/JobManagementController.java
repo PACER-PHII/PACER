@@ -68,12 +68,13 @@ public class JobManagementController {
 	private TestJobRunnerService testJobRunnerService;
 	private NLPaaSRequestService nlpaasRequestService;
 	private NLPaaSToRegistryBundleService nlpaasToRegistryBundleService;
+	private JMSUtil jmsUtil;
 	
 	@Autowired
 	public JobManagementController(PersonListRepository personListRepository, ActionRepository actionRepository, 
 			TaskScheduler taskScheduler, JsonTestRepository jsonTestRepository, JobStateRepository jobStateRepository, 
 			TestJobRunnerService testJobRunnerService, NLPaaSRequestService nLPaaSRequestService,
-			NLPaaSToRegistryBundleService nLPaaSToRegistryBundleService) {
+			NLPaaSToRegistryBundleService nLPaaSToRegistryBundleService, JMSUtil jmsUtil) {
 		this.personListRepository = personListRepository;
 		this.actionRepository = actionRepository;
 		this.jsonTestRepository = jsonTestRepository;
@@ -82,6 +83,7 @@ public class JobManagementController {
 		this.testJobRunnerService = testJobRunnerService;
 		this.nlpaasRequestService = nLPaaSRequestService;
 		this.nlpaasToRegistryBundleService = nLPaaSToRegistryBundleService;
+		this.jmsUtil = jmsUtil;
 		objectMapper = new ObjectMapper();
 	}
 
@@ -90,7 +92,7 @@ public class JobManagementController {
 	@Transactional
 	public ResponseEntity<JsonNode> postPersonList(@RequestBody PersonList list,HttpServletRequest request){
 		log.debug("personlist before presistenceprep:"+list.toString());
-		JMSUtil.perparePersonListForPersistence(list);
+		jmsUtil.perparePersonListForPersistence(list);
 		log.debug("personlist after presistenceprep:"+list.toString());
 		personListRepository.save(list);
 		Action action = list.getAction();

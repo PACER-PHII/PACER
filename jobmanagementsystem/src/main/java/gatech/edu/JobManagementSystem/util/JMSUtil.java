@@ -1,10 +1,14 @@
 package gatech.edu.JobManagementSystem.util;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import gatech.edu.JobManagementSystem.model.Action;
 import gatech.edu.JobManagementSystem.model.ActionType;
@@ -12,15 +16,33 @@ import gatech.edu.JobManagementSystem.model.Person;
 import gatech.edu.JobManagementSystem.model.PersonList;
 import gatech.edu.JobManagementSystem.model.ProcessImpl.RestAction;
 
+@Service
 public class JMSUtil {
 	private static final Logger log = LoggerFactory.getLogger(JMSUtil.class);
-	public static PersonList perparePersonListForPersistence(PersonList personList) {
+	JMSUtilConfig jmsUtilConfig;
+
+	@Autowired
+	public JMSUtil(JMSUtilConfig jmsUtilConfig){
+		this.jmsUtilConfig = jmsUtilConfig;
+	}
+
+	public PersonList perparePersonListForPersistence(PersonList personList) {
 		Action action = personList.getAction();
 		if(action == null) {
+			URL baseUrl;
+			URL finalUrl;
+			try {
+				baseUrl = new URL(jmsUtilConfig.getEndpoint());
+				finalUrl = new URL(baseUrl, "case?identifier=${person.id}&firstName=${person.firstName}&lastName=${person.lastName}&ecrId=${person.recordId}&cqlType=${list.jobType}&labOrderDate=${person.labOrderDate}");
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return null;
+			}
 			action = new RestAction();
 			action.setName("Post to resultsmanager to update the ECR with FHIR data");
 			action.setCronString("* * 8 * * *");
-			action.addParam("endpoint","http://results-manager:8080/ResultsManager/case?identifier=${person.id}&firstName=${person.firstName}&lastName=${person.lastName}&ecrId=${person.recordId}&cqlType=${list.jobType}&labOrderDate=${person.labOrderDate}");
+			action.addParam("endpoint",finalUrl.toExternalForm());
 			action.addParam("operation","POST");
 			action.addParam("body","");
 			personList.setAction(action);
