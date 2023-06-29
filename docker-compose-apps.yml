@@ -47,6 +47,7 @@ services:
       JDBC_PASSWORD: "postgres"
       BASIC_USERNAME: "username"
       BASIC_PASSWORD: "password"
+      RESULTS_MANAGER_URL: "http://results-manager:8080/ResultsManager/"
       #Uses 'true' or 'false' to enable or disable ssl
       SSL_ENABLED: "true"
       #Provide an .p12 SSL Keystore file for JMS to use for SSL
