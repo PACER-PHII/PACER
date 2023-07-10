@@ -15,6 +15,7 @@ import org.hl7.fhir.r4.model.Medication;
 import org.hl7.fhir.r4.model.MedicationRequest;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,7 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.client.interceptor.AdditionalRequestHeadersInterceptor;
 import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
 import ca.uhn.fhir.rest.server.exceptions.InvalidRequestException;
+import ca.uhn.fhir.rest.server.exceptions.UnclassifiedServerFailureException;
 import ca.uhn.fhir.util.BundleUtil;
 import edu.gatech.ResultsManager.fhir.config.FhirConfig;
 import gatech.edu.STIECR.JSON.CodeableConcept;
@@ -38,6 +40,7 @@ public class DirectFhirQueryService {
     private FhirConfig fhirConfig;
 	private FhirContext ctx;
 	private IGenericClient client;
+    private boolean isEpic = false;
 
     @Autowired
     public DirectFhirQueryService(FhirConfig fhirConfig, FhirContext ctx){
@@ -47,10 +50,11 @@ public class DirectFhirQueryService {
 		if(fhirConfig.getDataUser() != null && !fhirConfig.getDataUser().isEmpty() && fhirConfig.getDataPass() != null && !fhirConfig.getDataPass().isEmpty()) {
 			client.registerInterceptor(new BasicAuthInterceptor(fhirConfig.getDataUser(),fhirConfig.getDataPass()));
 		}
-		if(fhirConfig.getEpicClientId() != null && !fhirConfig.getEpicClientId().isEmpty()) {
+		if(fhirConfig.getEpicClientId() != null && !fhirConfig.getEpicClientId().trim().isEmpty()) {
 			AdditionalRequestHeadersInterceptor interceptor = new AdditionalRequestHeadersInterceptor();
 			interceptor.addHeaderValue("Epic-Client-Id", fhirConfig.getEpicClientId());
 			client.registerInterceptor(interceptor);
+            isEpic = true;
 		}
     }
 
@@ -67,6 +71,26 @@ public class DirectFhirQueryService {
             .map(ecr -> convertECRCodeableConceptToFHIRCoding(ecr))
             .toArray(Coding[]::new);
         Bundle returnBundle;
+        //Epic workflow doesn't use code
+        if(isEpic){
+            try{
+                returnBundle = client.search()
+                    .forResource(Condition.class)
+                    .where(Condition.PATIENT.hasId(patientId))
+                    .and(Condition.CATEGORY.exactly().code(category))
+                    .returnBundle(Bundle.class)
+                    .execute();
+            }
+            catch(InvalidRequestException | UnclassifiedServerFailureException e){
+                log.error(e.getMessage());
+                return new ArrayList<Condition>();
+            }
+            //After retrieving pages do the manual filter
+            List<Condition> conditions = retrieveAllPages(returnBundle, Condition.class);
+            conditions = epicFilterConditionByCode(conditions, codings);
+            return conditions;
+        }
+        //Generic fhir workflow
         try{
             returnBundle = client.search()
                 .forResource(Condition.class)
@@ -77,13 +101,19 @@ public class DirectFhirQueryService {
                 .execute();
         }
         //If Server does not support category then try without it
-        catch(InvalidRequestException e){
+        catch(InvalidRequestException | UnclassifiedServerFailureException e){
+            try {
             returnBundle = client.search()
                 .forResource(Condition.class)
                 .where(Condition.PATIENT.hasId(patientId))
                 .and(Condition.CODE.exactly().codings(codings))
                 .returnBundle(Bundle.class)
                 .execute();
+            }
+            catch(InvalidRequestException | UnclassifiedServerFailureException e1){
+                log.error(e.getMessage());
+                return new ArrayList<Condition>();
+            }
         }
         return retrieveAllPages(returnBundle, Condition.class);
     }
@@ -113,12 +143,44 @@ public class DirectFhirQueryService {
         return returnMedication;
     }
 
-    public List<MedicationRequest> medicationRequestSearch(String patientId){
-        Bundle returnBundle = client.search()
-            .forResource(MedicationRequest.class)
-            .where(MedicationRequest.PATIENT.hasId(patientId))
-            .returnBundle(Bundle.class)
-            .execute();
+    public List<MedicationRequest> medicationRequestSearch(String patientId, List<CodeableConcept> ecrConcepts){
+        Coding[] codings = ecrConcepts.stream()
+            .map(ecr -> convertECRCodeableConceptToFHIRCoding(ecr))
+            .toArray(Coding[]::new);
+        Bundle returnBundle;
+        if(isEpic){
+            try {
+                returnBundle = client.search()
+                    .forResource(MedicationRequest.class)
+                    .where(MedicationRequest.PATIENT.hasId(patientId))
+                    .returnBundle(Bundle.class)
+                    .execute();
+            }
+            catch(InvalidRequestException | UnclassifiedServerFailureException e){
+                log.error(e.getMessage());
+                return new ArrayList<MedicationRequest>();
+            }
+            List<MedicationRequest> medicationRequests = retrieveAllPages(returnBundle, MedicationRequest.class);
+            medicationRequests = epicReadLinkedMedictionAndAddCoding(medicationRequests);
+            medicationRequests = epicFilterMedicationRequestByCode(medicationRequests, codings);
+        }
+        else{
+            try {
+            returnBundle = client.search()
+                .forResource(MedicationRequest.class)
+                .where(MedicationRequest.PATIENT.hasId(patientId))
+                .and(Condition.CODE.exactly().codings(codings))
+                .returnBundle(Bundle.class)
+                .execute();
+            }
+            catch(InvalidRequestException | UnclassifiedServerFailureException e){
+                log.error(e.getMessage());
+                return new ArrayList<MedicationRequest>();
+            }
+        }
+        List<MedicationRequest> medicationRequests = retrieveAllPages(returnBundle, MedicationRequest.class);
+        if(isEpic){
+        }
         return retrieveAllPages(returnBundle, MedicationRequest.class);
     }
 
@@ -132,9 +194,20 @@ public class DirectFhirQueryService {
                 .returnBundle(Bundle.class)
                 .execute();   
         }
-        catch(InvalidRequestException e){
+        catch(InvalidRequestException | UnclassifiedServerFailureException e0){
+            try {
+                returnBundle = client.search()
+                .forResource(Observation.class)
+                .where(Observation.PATIENT.hasId(patientId))
+                .and(Observation.CATEGORY.exactly().code(category))
+                .returnBundle(Bundle.class)
+                .execute();
+            }
+            catch(InvalidRequestException | UnclassifiedServerFailureException e1){
+                log.error(e1.getMessage());
+                return new ArrayList<Observation>();
+            }
             //Just return no results if no category can be searched in this case
-            return new ArrayList<Observation>();
         }
         return retrieveAllPages(returnBundle, Observation.class);
     }
@@ -147,6 +220,44 @@ public class DirectFhirQueryService {
         return returnPatient;
     }
 
+    //Epic handlers
+    //Filter the conditions by codes since Epic does not allow a filter by code in query
+    public List<Condition> epicFilterConditionByCode(List<Condition> conditionBundle, Coding[] codings){
+        List<Condition> returnList = new ArrayList<Condition>();
+        for(Condition condition:conditionBundle){
+            if(codingExistInFhirCodeableConcept(condition.getCode(), codings)){
+                returnList.add(condition);
+            }
+        }
+        return returnList;
+    }
+    //Read medications by reference from the medicationrequest
+    public List<MedicationRequest> epicReadLinkedMedictionAndAddCoding(List<MedicationRequest> medicationRequests){
+        for(MedicationRequest medicationRequest:medicationRequests){
+            if(medicationRequest.getMedication()  instanceof Reference){
+                Reference medicationReference = medicationRequest.getMedicationReference();
+                String medicationId = medicationReference.getReferenceElement().getIdPart(); //TODO: Test that this is just the id
+			    Medication medication = this.medicationRead(medicationId);
+                if(medication != null && medication.getCode() != null && medication.getCode().getCoding() != null){
+			        medicationRequest.setMedication(medication.getCode());
+                }
+            }
+        }
+        return medicationRequests;
+    }
+
+    //Filter the medications by codes since Epic does not allow a filter by code in query
+    public List<MedicationRequest> epicFilterMedicationRequestByCode(List<MedicationRequest> medicationRequests, Coding[] codings){
+        List<MedicationRequest> returnList = new ArrayList<MedicationRequest>();
+        for(MedicationRequest medicationRequest:medicationRequests){
+            if(medicationRequest.getMedicationCodeableConcept() != null
+                && codingExistInFhirCodeableConcept(medicationRequest.getMedicationCodeableConcept(), codings)){
+                returnList.add(medicationRequest);
+            }
+        }
+        return returnList;
+    }
+    //Utilities
     public <T extends IBaseResource> List<T> retrieveAllPages(Bundle bundle, Class<T> clazz){
         List<IBaseResource> resources = new ArrayList<IBaseResource>();
         resources.addAll(BundleUtil.toListOfResources(ctx, bundle));
@@ -166,5 +277,19 @@ public class DirectFhirQueryService {
         returnCoding.setCode(ecrConcept.getcode());
         returnCoding.setSystem(ecrConcept.getsystem());
         return returnCoding;
+    }
+
+    
+    //Manual check for coding similarities since we cannot trust the display or version code
+    public boolean codingExistInFhirCodeableConcept(org.hl7.fhir.r4.model.CodeableConcept codeableConcept, Coding[] codings){
+        for(Coding codingA:codings){
+            for(Coding codingB:codeableConcept.getCoding()){
+                if(codingA.getCode().equals(codingB.getCode())
+                    && codingA.getSystem().equals(codingB.getSystem())){
+                        return true;
+                }
+            }
+        }
+        return false;
     }
 }

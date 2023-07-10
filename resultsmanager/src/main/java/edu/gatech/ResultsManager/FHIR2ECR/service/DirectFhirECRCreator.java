@@ -251,9 +251,14 @@ public class DirectFhirECRCreator {
 
     public ECR collectAndMapMedicationRequest(ECR ecr, String patientResourceId){
         log.info("Collecting and Mapping Medication Request");
-        List<MedicationRequest> medicationRequests = directFhirQueryService.medicationRequestSearch(patientResourceId);
-        for(MedicationRequest mr:medicationRequests){
-            mapMedicationRequest(ecr,mr);
+        Map<String, List<CodeableConcept> > conceptMap = cqlConceptCaptureService.getConceptDefMap();
+        List<String> medicationConcepts = Arrays.asList("Macrolides_0","Levofloxacin","Doxycycline_0","Doxycycline_1","Azithromycin","Ceftriaxone","Erythromycin_1","Ofloxcin","Macrolides_1","Erythromycin_0");
+        for(String concept:medicationConcepts){
+            List<CodeableConcept> medicationCodes = conceptMap.get(concept);
+            List<MedicationRequest> medicationRequests = directFhirQueryService.medicationRequestSearch(patientResourceId,medicationCodes);
+            for(MedicationRequest mr:medicationRequests){
+                mapMedicationRequest(ecr,mr);
+            }
         }
         return ecr;
     }
