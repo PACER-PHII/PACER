@@ -89,7 +89,7 @@ services:
       CQL_EXECUTION_CODEMAPPER_USER: "client" #Update to your translate server credentials
       CQL_EXECUTION_CODEMAPPER_PASS: "secret" #Update to your translate server credentials
       CQL_EXECUTION_CODEMAPPER_SYSTEMS_MAP: '{}'#'{"http://www.nlm.nih.gov/research/umls/rxnorm":"http://hl7.org/fhir/ndfrt"}'
-      CQL_EXECUTION_EPIC_CLIENT_ID: :"someclientid" #Leave blank if no epic-client-id is needed.
+      CQL_EXECUTION_EPIC_CLIENT_ID: "someclientid" #Leave blank if no epic-client-id is needed.
       CQL_EXECUTION_TERMINOLOGY_USER: "jduke99" #Update to your terminology credentials
       CQL_EXECUTION_TERMINOLOGY_PASS: "v6R4*SsU39" #Update to your terminology credentials
       CQL_EXECUTION_URL: "cql-execution"
