@@ -16,6 +16,7 @@ public class FhirConfig {
 	private String dataUser;
 	private String dataPass;
 	private String epicClientId;
+	private boolean isEpic;
 	
 	public String getDataServiceUri() {
 		return dataServiceUri;
@@ -47,5 +48,17 @@ public class FhirConfig {
 
 	public void setEpicClientId(String epicClientId) {
 		this.epicClientId = epicClientId;
+	}
+
+	public boolean isIsEpic() {
+		return this.isEpic;
+	}
+
+	public boolean getIsEpic() {
+		return this.isEpic;
+	}
+
+	public void setIsEpic(boolean isEpic) {
+		this.isEpic = isEpic;
 	}
 }

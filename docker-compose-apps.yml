@@ -95,6 +95,7 @@ services:
       CQL_EXECUTION_URL: "cql-execution"
       CQL_STORAGE_URL: "cql-storage:8080/CQLStorage/"
       FHIR_FILTER_URL: "fhir-filter"
+      IS_EPIC: "true"
 
   translateconcept:
     depends_on:

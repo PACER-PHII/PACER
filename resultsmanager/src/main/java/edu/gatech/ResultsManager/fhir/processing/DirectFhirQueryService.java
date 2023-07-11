@@ -40,7 +40,6 @@ public class DirectFhirQueryService {
     private FhirConfig fhirConfig;
 	private FhirContext ctx;
 	private IGenericClient client;
-    private boolean isEpic = false;
 
     @Autowired
     public DirectFhirQueryService(FhirConfig fhirConfig, FhirContext ctx){
@@ -50,11 +49,10 @@ public class DirectFhirQueryService {
 		if(fhirConfig.getDataUser() != null && !fhirConfig.getDataUser().isEmpty() && fhirConfig.getDataPass() != null && !fhirConfig.getDataPass().isEmpty()) {
 			client.registerInterceptor(new BasicAuthInterceptor(fhirConfig.getDataUser(),fhirConfig.getDataPass()));
 		}
-		if(fhirConfig.getEpicClientId() != null && !fhirConfig.getEpicClientId().trim().isEmpty()) {
+		if(fhirConfig.getEpicClientId() != null && !fhirConfig.getEpicClientId().isEmpty()) {
 			AdditionalRequestHeadersInterceptor interceptor = new AdditionalRequestHeadersInterceptor();
 			interceptor.addHeaderValue("Epic-Client-Id", fhirConfig.getEpicClientId());
 			client.registerInterceptor(interceptor);
-            isEpic = true;
 		}
     }
 
@@ -72,7 +70,7 @@ public class DirectFhirQueryService {
             .toArray(Coding[]::new);
         Bundle returnBundle;
         //Epic workflow doesn't use code
-        if(isEpic){
+        if(fhirConfig.getIsEpic()){
             try{
                 returnBundle = client.search()
                     .forResource(Condition.class)
@@ -148,7 +146,7 @@ public class DirectFhirQueryService {
             .map(ecr -> convertECRCodeableConceptToFHIRCoding(ecr))
             .toArray(Coding[]::new);
         Bundle returnBundle;
-        if(isEpic){
+        if(fhirConfig.getIsEpic()){
             try {
                 returnBundle = client.search()
                     .forResource(MedicationRequest.class)
@@ -177,9 +175,6 @@ public class DirectFhirQueryService {
                 log.error(e.getMessage());
                 return new ArrayList<MedicationRequest>();
             }
-        }
-        List<MedicationRequest> medicationRequests = retrieveAllPages(returnBundle, MedicationRequest.class);
-        if(isEpic){
         }
         return retrieveAllPages(returnBundle, MedicationRequest.class);
     }
