@@ -27,7 +27,7 @@ public class ResultsManagerApplicationTests {
 
 	String codesystemDefCapturePatternString = "codesystem\\s*\\\"(?<CodeystemIdentifier>.*)\\\":\\s*\\'(?<CodesystemURL>.*)\\'";
 	String conceptCapturePatternString = "define \\\"(?<ConceptDefinition>.*)\\\":\\s*Concept\\s*\\{(?<ConceptCodes>.*)\\}";
-	String codeListSeperatorPatternString = "(.+?)(?:,\\s*|$)";
+	String codeListSeperatorPatternString = "(.+?)(,(?=\\s*Code)|$)";
 	String codeSystemAndDisplayCapturePatternString = "Code\\s*\\'(?<CodeName>.*)\\'\\s*from\\s*(?<CodesystemRef>\\w*)\\s*(display\\s*\\'(?<DisplayName>.*)\\')?";
 	Pattern codesystemDefCapturePattern = Pattern.compile(codesystemDefCapturePatternString);
 	Pattern conceptCapturePattern = Pattern.compile(conceptCapturePatternString);
@@ -73,7 +73,6 @@ public class ResultsManagerApplicationTests {
 			while(codeListSeperatorMatcher.find()){
 				System.out.println("---");
 				for(int i=0;i<codeListSeperatorMatcher.groupCount();i++){
-					System.out.println(codeListSeperatorMatcher.group(i));
 					codeSet.add(codeListSeperatorMatcher.group(i));
 				}
 			}
@@ -84,6 +83,7 @@ public class ResultsManagerApplicationTests {
 				while(codeSystemAndDisplayMatcher.find()){
 					System.out.println("---");
 					CodeableConcept cc = new CodeableConcept();
+					System.out.println("Full Line:"+codeDef);
 					System.out.println("CodeName:"+codeSystemAndDisplayMatcher.group("CodeName"));
 					cc.setcode(codeSystemAndDisplayMatcher.group("CodeName"));
 					System.out.println("CodesystemRef:"+codeSystemAndDisplayMatcher.group("CodesystemRef"));

@@ -24,7 +24,7 @@ public class CQLConceptCaptureService {
 
     private static String codesystemDefCapturePatternString = "codesystem\\s*\\\"(?<CodeystemIdentifier>.*)\\\":\\s*\\'(?<CodesystemURL>.*)\\'";
 	private static String conceptCapturePatternString = "define \\\"(?<ConceptDefinition>.*)\\\":\\s*Concept\\s*\\{(?<ConceptCodes>.*)\\}";
-	private static String codeListSeperatorPatternString = "(.+?)(?:,\\s*|$)";
+	private static String codeListSeperatorPatternString = "(.+?)(,(?=\\s*Code)|$)";
 	private static String codeSystemAndDisplayCapturePatternString = "Code\\s*\\'(?<CodeName>.*)\\'\\s*from\\s*(?<CodesystemRef>\\w*)\\s*(display\\s*\\'(?<DisplayName>.*)\\')?";
     private static Pattern codesystemDefCapturePattern = Pattern.compile(codesystemDefCapturePatternString);
 	private static Pattern conceptCapturePattern = Pattern.compile(conceptCapturePatternString);
@@ -59,9 +59,7 @@ public class CQLConceptCaptureService {
 			Matcher codeListSeperatorMatcher = codeListSeperatorPattern.matcher(codeListString);
 			List<String> codeSet = new ArrayList<String>();
 			while(codeListSeperatorMatcher.find()){
-				for(int i=0;i<codeListSeperatorMatcher.groupCount();i++){
-					codeSet.add(codeListSeperatorMatcher.group(i));
-				}
+				codeSet.add(codeListSeperatorMatcher.group(0));
 			}
 			List<CodeableConcept> codeableConceptSet = new ArrayList<CodeableConcept>();
 			for(String codeDef:codeSet){
