@@ -54,6 +54,7 @@ public class DirectFhirQueryService {
 			interceptor.addHeaderValue("Epic-Client-Id", fhirConfig.getEpicClientId());
 			client.registerInterceptor(interceptor);
 		}
+        log.info("Detecting Epic Server Status. IsEpic:"+fhirConfig.getIsEpic());
     }
 
     public List<Condition> conditionSearchEncounterDiagnosis(String patientId,List<CodeableConcept> ecrConcepts){

@@ -21,6 +21,7 @@ import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.MedicationRequest;
 import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Range;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.SimpleQuantity;
@@ -298,7 +299,7 @@ public class DirectFhirECRCreator {
         gatech.edu.STIECR.JSON.Dosage ecrDosage = new gatech.edu.STIECR.JSON.Dosage();
         DosageDoseAndRateComponent doseUntyped = dosageInstruction.getDoseAndRateFirstRep();
         if(doseUntyped != null && doseUntyped.hasDoseQuantity()){
-            SimpleQuantity doseTyped = (SimpleQuantity) doseUntyped.getDoseQuantity();
+            Quantity doseTyped = doseUntyped.getDoseQuantity();
             ecrDosage.setValue(doseTyped.getValue().toString());
             ecrDosage.setUnit(doseTyped.getUnit());
         }
@@ -401,12 +402,12 @@ public class DirectFhirECRCreator {
             return null;
         }
         for(Address address:addresses){
-            if(address.getUse().equals(AddressUse.HOME)){
+            if(address.getUse() != null && address.getUse().equals(AddressUse.HOME)){
                 return address;
             }
         }
         for(Address address:addresses){
-            if(address.getUse().equals(AddressUse.BILLING)){
+            if(address.getUse() != null && address.getUse().equals(AddressUse.BILLING)){
                 return address;
             }
         }
