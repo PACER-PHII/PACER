@@ -62,7 +62,7 @@ public class DirectFhirQueryService {
     }
 
     public List<Condition> conditionSearchProblemList(String patientId,List<CodeableConcept> ecrConcepts){
-        return conditionSearchWithCategory(patientId, ecrConcepts, "problem-list");
+        return conditionSearchWithCategory(patientId, ecrConcepts, "problem-list-item");
     }
 
     public List<Condition> conditionSearchWithCategory(String patientId,List<CodeableConcept> ecrConcepts,String category){
