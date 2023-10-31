@@ -14,8 +14,10 @@ import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.Medication;
 import org.hl7.fhir.r4.model.MedicationRequest;
 import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -263,7 +265,11 @@ public class DirectFhirQueryService {
                 .execute();
             resources.addAll(BundleUtil.toListOfResources(ctx, bundle));
         }
-        List<T> castedResourceList = resources.stream().map(r -> (T) r).collect(Collectors.toList());
+        if(bundle.getTotal() == 0){
+            log.debug("Searched and Found 0 resources of type "+clazz.getName());
+            return new ArrayList<T>();
+        }
+        List<T> castedResourceList = resources.stream().filter(r -> clazz.isInstance(r)).map(r -> (T) r).collect(Collectors.toList());
         log.debug("Searched and Found "+castedResourceList.size()+" resources of type "+clazz.getName());
         return castedResourceList;
     }

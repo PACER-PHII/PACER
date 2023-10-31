@@ -20,6 +20,7 @@ import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.MedicationRequest;
+import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Range;
@@ -64,11 +65,36 @@ public class DirectFhirECRCreator {
     public ECR queryFhirServerAndCreateECR(String patientResourceId){
         ECR ecr = new ECR();
         mapPatientData(ecr, patientResourceId);
-        collectAndMapDiagnosis(ecr, patientResourceId);
-        collectAndMapSymptoms(ecr, patientResourceId);
-        collectAndMapImmunization(ecr, patientResourceId);
-        collectAndMapMedicationRequest(ecr, patientResourceId);
-        //mapObservationData(ecr, patientResourceId);
+        try{
+            collectAndMapDiagnosis(ecr, patientResourceId);
+        }
+        catch (Exception e){
+            log.error("Error collecting diagnosis data",e);
+        }
+        try{
+            collectAndMapSymptoms(ecr, patientResourceId);
+        }
+        catch (Exception e){
+            log.error("Error collecting symptom data",e);
+        }
+        try{
+            collectAndMapImmunization(ecr, patientResourceId);
+        }
+        catch (Exception e){
+            log.error("Error collecting immunization data",e);
+        }
+        try{
+            collectAndMapMedicationRequest(ecr, patientResourceId);
+        }
+        catch(Exception e){
+            log.error("Error collecting medication request data",e);
+        }
+        try{
+            mapPregnancy(ecr, patientResourceId);
+        }
+        catch(Exception e){
+            log.error("Error collecting social history observation for pregnancy data",e);
+        }
         return ecr;
     }
     //Mapping Resource Functions
@@ -342,6 +368,27 @@ public class DirectFhirECRCreator {
             ecrMedication.setDate(authoredOn.toString());
         }
         ecr.getPatient().getMedicationProvided().add(ecrMedication);
+        return ecr;
+    }
+
+    public ECR mapPregnancy(ECR ecr, String patientResourceId){
+        log.info("Collecting and mapping social-history Observations for pregnancy");
+        List<Observation> socialHistory = directFhirQueryService.observationSearchWithCategory(patientResourceId, "social-history");
+        Coding pregnancyStatusCoding = new Coding("http://loinc.org", "82810-3", "Pregnancy status");
+        for(Observation observation: socialHistory){
+            if(observation.getCode().hasCoding(pregnancyStatusCoding.getSystem(), pregnancyStatusCoding.getCode())){
+                //Found Pregnancy status
+                log.info("found pregnancy status:");
+                Type pregnancyValueUntyped = observation.getValue();
+                if(pregnancyValueUntyped instanceof org.hl7.fhir.r4.model.CodeableConcept){
+                    org.hl7.fhir.r4.model.CodeableConcept pregnancyValueCC = (org.hl7.fhir.r4.model.CodeableConcept)pregnancyValueUntyped;
+                    if(pregnancyValueCC.getText().equals("Yes") || pregnancyValueCC.hasCoding("http://snomed.info/sct", "373066001")){
+                        log.info("Found a positive preganacy value observation. Setting pregnancy to yes");
+                        ecr.getPatient().setpregnant(true);
+                    }
+                }
+            }
+        }
         return ecr;
     }
 
