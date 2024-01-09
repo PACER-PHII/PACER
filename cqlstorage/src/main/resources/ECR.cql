@@ -4,7 +4,7 @@ include FHIRHelpers version '3.0.0' called FHIRHelpers
 codesystem "ICD9PROC": 'http://hl7.org/fhir/sid/icd-9-proc'
 codesystem "LOINC": 'http://loinc.org'
 codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
-codesystem "icd10cm": 'urn:oid:2.16.840.1.113883.6.90'
+codesystem "icd10cm": 'http://hl7.org/fhir/sid/icd-10-cm'
 codesystem "sct": 'urn:oid:2.16.840.1.113883.6.96'
 codesystem "rxnorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'
 codesystem "musclocal": 'urn:hssc:musc:medicationcode'
