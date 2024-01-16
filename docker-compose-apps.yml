@@ -92,8 +92,8 @@ services:
       CQL_EXECUTION_EPIC_CLIENT_ID: "someclientid" #Leave blank if no epic-client-id is needed.
       CQL_EXECUTION_TERMINOLOGY_USER: "jduke99" #Update to your terminology credentials
       CQL_EXECUTION_TERMINOLOGY_PASS: "v6R4*SsU39" #Update to your terminology credentials
-      CQL_EXECUTION_URL: "cql-execution"
-      CQL_STORAGE_URL: "cql-storage:8080/CQLStorage/"
+      CQL_EXECUTION_URL: "http://cql-execution:8080/cql"
+      CQL_STORAGE_URL: "https://cql-storage:8080/CQLStorage/"
       FHIR_FILTER_URL: "fhir-filter"
       IS_EPIC: "true"
 
