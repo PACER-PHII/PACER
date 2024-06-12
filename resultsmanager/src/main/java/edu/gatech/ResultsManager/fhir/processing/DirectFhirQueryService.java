@@ -211,8 +211,8 @@ public class DirectFhirQueryService {
         else{
             try {
             returnBundle = client.search()
-                .forResource(MedicationRequest.class)
-                .where(MedicationRequest.PATIENT.hasId(patientId))
+                .forResource(MedicationStatement.class)
+                .where(MedicationStatement.PATIENT.hasId(patientId))
                 .and(Condition.CODE.exactly().codings(codings))
                 .returnBundle(Bundle.class)
                 .execute();
