@@ -1,0 +1,4 @@
+codesystem\s*\"(?<CodeystemIdentifier>.*)\":\s*\'(?<CodesystemURL>.*)\'
+define \"(?<ConceptDefinition>.*)\":\s*Concept\s*\{(?<ConceptCodes>.*)\}
+(.+?)(?:,\s*|$)
+Code\s*\'(?<CodeName>.*)\'\s*from\s*(?<CodesystemRef>\w*)\s*(display\s*\'(?<DisplayName>.*)\')?

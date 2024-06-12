@@ -188,6 +188,10 @@ public class DirectFhirQueryService {
         Coding[] codings = ecrConcepts.stream()
             .map(ecr -> convertECRCodeableConceptToFHIRCoding(ecr))
             .toArray(Coding[]::new);
+        for(Coding coding:codings){
+            log.debug("    code:"+coding.getCode());
+            log.debug("    system:"+coding.getSystem());
+        }
         Bundle returnBundle;
         if(fhirConfig.getIsEpic()){
             try {

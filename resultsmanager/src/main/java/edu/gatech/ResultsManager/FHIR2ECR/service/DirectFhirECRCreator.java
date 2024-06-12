@@ -302,6 +302,7 @@ public class DirectFhirECRCreator {
         Map<String, List<CodeableConcept> > conceptMap = cqlConceptCaptureService.getConceptDefMap();
         List<String> medicationConcepts = Arrays.asList("Macrolides_0","Levofloxacin","Doxycycline_0","Doxycycline_1","Azithromycin","Ceftriaxone","Erythromycin_1","Ofloxcin","Macrolides_1","Erythromycin_0");
         for(String concept:medicationConcepts){
+            log.debug("Medication Statement: Retrieve Concept '"+concept+"'.");
             List<CodeableConcept> medicationCodes = conceptMap.get(concept);
             List<MedicationStatement> medicationStatements = directFhirQueryService.medicationStatementSearch(patientResourceId,medicationCodes);
             for(MedicationStatement ms:medicationStatements){
