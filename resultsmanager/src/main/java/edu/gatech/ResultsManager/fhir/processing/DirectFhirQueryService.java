@@ -13,6 +13,7 @@ import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.Medication;
 import org.hl7.fhir.r4.model.MedicationRequest;
+import org.hl7.fhir.r4.model.MedicationStatement;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.Patient;
@@ -164,6 +165,7 @@ public class DirectFhirQueryService {
             List<MedicationRequest> medicationRequests = retrieveAllPages(returnBundle, MedicationRequest.class);
             medicationRequests = epicReadLinkedMedictionAndAddCoding(medicationRequests);
             medicationRequests = epicFilterMedicationRequestByCode(medicationRequests, codings);
+            return medicationRequests;
         }
         else{
             try {
@@ -180,6 +182,43 @@ public class DirectFhirQueryService {
             }
         }
         return retrieveAllPages(returnBundle, MedicationRequest.class);
+    }
+
+    public List<MedicationStatement> medicationStatementSearch(String patientId, List<CodeableConcept> ecrConcepts){
+        Coding[] codings = ecrConcepts.stream()
+            .map(ecr -> convertECRCodeableConceptToFHIRCoding(ecr))
+            .toArray(Coding[]::new);
+        Bundle returnBundle;
+        if(fhirConfig.getIsEpic()){
+            try {
+                returnBundle = client.search()
+                    .forResource(MedicationStatement.class)
+                    .where(MedicationStatement.PATIENT.hasId(patientId))
+                    .returnBundle(Bundle.class)
+                    .execute();
+            }
+            catch(InvalidRequestException | UnclassifiedServerFailureException e){
+                log.error(e.getMessage());
+                return new ArrayList<MedicationStatement>();
+            }
+            List<MedicationStatement> medicationStatements = retrieveAllPages(returnBundle, MedicationStatement.class);
+            return medicationStatements;
+        }
+        else{
+            try {
+            returnBundle = client.search()
+                .forResource(MedicationRequest.class)
+                .where(MedicationRequest.PATIENT.hasId(patientId))
+                .and(Condition.CODE.exactly().codings(codings))
+                .returnBundle(Bundle.class)
+                .execute();
+            }
+            catch(InvalidRequestException | UnclassifiedServerFailureException e){
+                log.error(e.getMessage());
+                return new ArrayList<MedicationStatement>();
+            }
+        }
+        return retrieveAllPages(returnBundle, MedicationStatement.class);
     }
 
     public List<Observation> observationSearchWithCategory(String patientId,String category){

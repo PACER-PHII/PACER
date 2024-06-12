@@ -20,6 +20,7 @@ import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.MedicationRequest;
+import org.hl7.fhir.r4.model.MedicationStatement;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Quantity;
@@ -88,6 +89,12 @@ public class DirectFhirECRCreator {
         }
         catch(Exception e){
             log.error("Error collecting medication request data",e);
+        }
+        try{
+            collectAndMapMedicationStatement(ecr, patientResourceId);
+        }
+        catch(Exception e){
+            log.error("Error collecting medication statement data",e);
         }
         try{
             mapPregnancy(ecr, patientResourceId);
@@ -290,6 +297,20 @@ public class DirectFhirECRCreator {
         return ecr;
     }
 
+    public ECR collectAndMapMedicationStatement(ECR ecr, String patientResourceId){
+        log.info("Collecting and Mapping Medication ");
+        Map<String, List<CodeableConcept> > conceptMap = cqlConceptCaptureService.getConceptDefMap();
+        List<String> medicationConcepts = Arrays.asList("Macrolides_0","Levofloxacin","Doxycycline_0","Doxycycline_1","Azithromycin","Ceftriaxone","Erythromycin_1","Ofloxcin","Macrolides_1","Erythromycin_0");
+        for(String concept:medicationConcepts){
+            List<CodeableConcept> medicationCodes = conceptMap.get(concept);
+            List<MedicationStatement> medicationStatements = directFhirQueryService.medicationStatementSearch(patientResourceId,medicationCodes);
+            for(MedicationStatement ms:medicationStatements){
+                mapMedicationStatement(ecr,ms);
+            }
+        }
+        return ecr;
+    }
+
     public ECR mapMedicationRequest(ECR ecr, MedicationRequest medicationRequest){
         //Get the code from the MR or the referenced medication
         CodeableConcept ecrCode = new CodeableConcept();
@@ -366,6 +387,80 @@ public class DirectFhirECRCreator {
         }
         else if(authoredOn != null) {
             ecrMedication.setDate(authoredOn.toString());
+        }
+        ecr.getPatient().getMedicationProvided().add(ecrMedication);
+        return ecr;
+    }
+
+    public ECR mapMedicationStatement(ECR ecr, MedicationStatement medicationStatement){
+        //Get the code from the MR or the referenced medication
+        CodeableConcept ecrCode = new CodeableConcept();
+		Medication ecrMedication = new Medication();
+		Type medicationCodeUntyped = medicationStatement.getMedication();
+		org.hl7.fhir.r4.model.CodeableConcept code = null;
+        org.hl7.fhir.r4.model.Medication medication = null;
+		if (medicationCodeUntyped instanceof org.hl7.fhir.r4.model.CodeableConcept) {
+			code = (org.hl7.fhir.r4.model.CodeableConcept) medicationCodeUntyped;
+		} else if (medicationCodeUntyped instanceof Reference) {
+			Reference medicationReference = (Reference) medicationCodeUntyped;
+            String medicationId = medicationReference.getReferenceElement().getIdPart(); //TODO: Test that this is just the id
+			medication = directFhirQueryService.medicationRead(medicationId);
+			code = medication.getCode();
+		}
+        //Don't continue if the code is null
+        if(code == null){
+            return ecr;
+        }
+        ecrCode = findCCfromCode(code);
+        //If we couldn't find a matching code it's not related to our search
+        if(ecrCode == null){
+            return ecr;
+        }
+        ecrMedication.setCode(ecrCode.getcode());
+        ecrMedication.setSystem(ecrCode.getsystem());
+        ecrMedication.setDisplay(ecrCode.getdisplay());
+        if (!ecr.getPatient().getMedicationProvided().contains(ecrMedication)) {
+            ecr.getPatient().getMedicationProvided().add(ecrMedication);
+        }
+        //Handle Dosage
+        Dosage dosageInstruction = medicationStatement.getDosageFirstRep();
+        gatech.edu.STIECR.JSON.Dosage ecrDosage = new gatech.edu.STIECR.JSON.Dosage();
+        DosageDoseAndRateComponent doseUntyped = dosageInstruction.getDoseAndRateFirstRep();
+        if(doseUntyped != null && doseUntyped.hasDoseQuantity()){
+            Quantity doseTyped = doseUntyped.getDoseQuantity();
+            ecrDosage.setValue(doseTyped.getValue().toString());
+            ecrDosage.setUnit(doseTyped.getUnit());
+        }
+        else if(doseUntyped != null && doseUntyped.hasDoseRange()){
+            Range dosageRange = (Range) doseUntyped.getDoseRange();
+            BigDecimal high = dosageRange.getHigh().getValue();
+            BigDecimal low = dosageRange.getLow().getValue();
+            BigDecimal mean = high.add(low);
+            mean = mean.divide(new BigDecimal(2));
+            ecrDosage.setValue(mean.toString());
+            ecrDosage.setUnit(dosageRange.getHigh().getUnit());
+        }
+        //TODO: Handle timing when timing is code
+        if(dosageInstruction.getTiming() != null) {
+            if(dosageInstruction.getTiming().getRepeat() != null) {
+                TimingRepeatComponent repeat = dosageInstruction.getTiming().getRepeat();
+                if(repeat.hasPeriod() && repeat.hasPeriodUnit() && repeat.hasFrequency()) {
+                    String periodUnit = repeat.getPeriodUnit().getDisplay();
+                    BigDecimal period = repeat.getPeriod();
+                    Integer frequency = repeat.getFrequency();
+                    String commonFrequency= "" + frequency
+                            + " times per "
+                            + period +
+                            " " +periodUnit;
+                    ecrMedication.setFrequency(commonFrequency);
+                }
+            }
+        }
+        ecrMedication.setDosage(ecrDosage);
+        Type effectiveValue = medicationStatement.getEffective();
+        if(effectiveValue != null && effectiveValue instanceof DateTimeType){
+            String effectiveDate = DateUtil.dateTimeToStdString(((DateTimeType) effectiveValue).getValue());
+            ecrMedication.setDate(effectiveDate);
         }
         ecr.getPatient().getMedicationProvided().add(ecrMedication);
         return ecr;
